@@ -3,7 +3,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import dotenv from "dotenv";
 import path from "path";
-
+import userRoutes from './routes/user.routes';
 
 dotenv.config();
 // can use .env variable below this
@@ -22,7 +22,7 @@ let corsOptions = {
 app.use(cors(corsOptions)); // implement cors middleware
 
 app.use(bodyParser.json());
-
+app.use("/api/auth", userRoutes);
 
 
 app.get('/', (req: Request, res: Response) => {

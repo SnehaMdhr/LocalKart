@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:localkart/core/feature/splash/presentation/pages/splash_screen.dart';
+import 'package:localkart/feature/splash/presentation/pages/splash_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key});

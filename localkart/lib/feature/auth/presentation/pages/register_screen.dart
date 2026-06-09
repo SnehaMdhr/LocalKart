@@ -1,0 +1,405 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:localkart/core/utils/snackbar_utils.dart';
+import 'package:localkart/core/widgets/custom_button.dart';
+import 'package:localkart/core/widgets/custom_text_field.dart';
+import 'package:localkart/feature/auth/presentation/pages/login_screen.dart';
+import 'package:localkart/feature/auth/presentation/states/auth_state.dart';
+import 'package:localkart/feature/auth/presentation/view_model/auth_view_model.dart';
+
+class RegisterScreen extends ConsumerStatefulWidget {
+  const RegisterScreen({super.key});
+
+  @override
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  final nameController = TextEditingController();
+  final emailController = TextEditingController();
+  final phoneController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
+
+  Future<void> _handleRegister() async {
+    if (_formKey.currentState!.validate()) {
+      await ref
+          .read(authViewModelProvider.notifier)
+          .register(
+            name: nameController.text.trim(),
+            email: emailController.text.trim(),
+            phone: phoneController.text.trim(),
+            username: emailController.text.trim().split("@").first,
+            password: passwordController.text.trim(),
+            confirmPassword: confirmPasswordController.text.trim(),
+          );
+    }
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    phoneController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+
+
+  @override
+  Widget build(BuildContext context) {
+     final authState = ref.watch(authViewModelProvider);
+    final isLoading = authState.status == AuthStatus.loading;
+
+    ref.listen<AuthState>(authViewModelProvider, (previous, next) {
+      if (next.status == AuthStatus.error) {
+        SnackbarUtils.showError(
+          context,
+          next.errorMessage ?? "Registration failed",
+          duration: const Duration(seconds: 1),
+        );
+      } else if (next.status == AuthStatus.registered) {
+        SnackbarUtils.showSuccess(
+          context,
+          "Registration successful",
+          duration: const Duration(seconds: 1),
+        );
+        Navigator.push(context,MaterialPageRoute(
+            builder: (_) =>
+              const LoginScreen(),
+        ),
+        );
+      }
+    });
+    return Scaffold(
+      body: Stack(
+        children: [
+          /// Background Gradient
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFF7FBF5),
+                  Color(0xFFEAF7E8),
+                ],
+              ),
+            ),
+          ),
+
+          /// Left Glow
+          Positioned(
+            top: 120,
+            left: -100,
+            child: Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.green.withOpacity(0.08),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.green.withOpacity(0.15),
+                    blurRadius: 120,
+                    spreadRadius: 60,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          /// Bottom Glow
+          Positioned(
+            bottom: 80,
+            right: -80,
+            child: Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.green.withOpacity(0.06),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.green.withOpacity(0.12),
+                    blurRadius: 140,
+                    spreadRadius: 70,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          SafeArea(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 20,
+                ),
+                child: Form(
+                  key: _formKey,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+
+                    /// Logo
+                    Container(
+                      decoration: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.green.withOpacity(0.15),
+                            blurRadius: 50,
+                            spreadRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: Image.asset(
+                        "assets/images/logo.png",
+                        height: 90,
+                      ),
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    /// Register Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.96),
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          const Text(
+                            "Create Account",
+                            style: TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1F2937),
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          const Text(
+                            "Fill in your details to get started",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black54,
+                            ),
+                          ),
+
+                          const SizedBox(height: 30),
+
+                          /// Name
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              "Name",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          CustomTextField(
+                            controller: nameController,
+                            hint: "Name",
+                            prefixIcon: Icons.person_outline,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return "Name is required";
+                              }
+                              return null;
+                            },
+                          ),
+
+                          const SizedBox(height: 18),
+
+                          /// Email
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              "Email Address",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          CustomTextField(
+                            controller: emailController,
+                            hint: "name@example.com",
+                            prefixIcon: Icons.email_outlined,
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return "Email is required";
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 18),
+
+                          /// Phone
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              "Phone Number",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          CustomTextField(
+                            controller: phoneController,
+                            hint: "+977 9800000000",
+                            prefixIcon: Icons.phone_outlined,
+                            keyboardType: TextInputType.phone,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return "Phone number is required";
+                              }
+                              return null;
+                            },
+                          ),
+
+                          const SizedBox(height: 18),
+
+                          /// Password
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              "Password",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          CustomTextField(
+                            controller: passwordController,
+                            hint: "••••••••",
+                            prefixIcon: Icons.lock_outline,
+                            isPassword: true,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Password is required";
+                              }
+                              if (value.length < 6) {
+                                return "Password must be at least 6 characters";
+                              }
+                              return null;
+                            },
+                          ),
+
+                          const SizedBox(height: 18),
+
+                          /// Confirm Password
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              "Confirm Password",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          CustomTextField(
+                            controller: confirmPasswordController,
+                            hint: "••••••••",
+                            prefixIcon: Icons.lock_outline,
+                            isPassword: true,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Confirm your password";
+                              }
+
+                              if (value != passwordController.text) {
+                                return "Passwords do not match";
+                              }
+
+                              return null;
+                            },
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          /// Register Button
+                          CustomButton(
+                            text: "Register",
+                            isLoading: isLoading,
+                            onPressed: _handleRegister,
+                          ),
+
+                          const SizedBox(height: 24),
+                           /// Login Navigation
+                          Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                "Already have an account? ",
+                                style: TextStyle(
+                                  color: Colors.black54,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(context,MaterialPageRoute(
+                                      builder: (_) =>
+                                        const LoginScreen(),
+                                  ),);
+                                },
+                                child: const Text(
+                                  "Login now",
+                                  style: TextStyle(
+                                    color: Color(0xFF0B6B1D),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:localkart/app/theme/app_colors.dart';
+import 'package:localkart/core/widgets/app_background.dart';
+import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/feature/auth/presentation/pages/login_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -75,8 +78,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         color: currentPage == index
-            ? const Color(0xFF0B6B1D)
-            : Colors.grey.shade300,
+          ? AppColors.primary
+          : AppColors.divider,
       ),
     );
   }
@@ -84,18 +87,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFF7FBF5),
-              Color(0xFFEAF7E8),
-            ],
-          ),
-        ),
+      body: AppBackground(
         child: SafeArea(
           child: PageView.builder(
             controller: _pageController,
@@ -122,10 +114,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         child: const Text(
                           "Skip",
                           style: TextStyle(
-                            color: Color(0xFF2E7D32),
+                            color: AppColors.primary,
                             fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
                       ),
                     ),
 
@@ -141,7 +133,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           borderRadius: BorderRadius.circular(26),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.green.withOpacity(0.15),
+                              color: AppColors.primary.withOpacity(0.15),
                               blurRadius: 35,
                               offset: const Offset(0, 15),
                             ),
@@ -168,7 +160,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
+                            color: AppColors.textPrimary.withOpacity(0.08),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -182,7 +174,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF0B6B1D),
+                              color: AppColors.primary,
                             ),
                           ),
 
@@ -194,7 +186,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             style: const TextStyle(
                               fontSize: 15,
                               height: 1.5,
-                              color: Colors.black54,
+                              color: AppColors.textSecondary,
                             ),
                           ),
 
@@ -212,31 +204,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           const SizedBox(height: 24),
 
                           /// Button
-                          SizedBox(
-                            width: double.infinity,
-                            height: 56,
-                            child: ElevatedButton(
-                              onPressed: nextPage,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    const Color(0xFF0B6B1D),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(18),
-                                ),
-                              ),
-                              child: Text(
-                                currentPage == onboardingData.length - 1
-                                    ? "Get Started"
-                                    : "Next →",
-                                style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
+                          CustomButton(
+                            text: currentPage == onboardingData.length - 1
+                                ? "Get Started"
+                                : "Next",
+                            onPressed: nextPage,
                           ),
                         ],
                       ),

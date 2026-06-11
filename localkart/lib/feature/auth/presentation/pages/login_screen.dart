@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/services/storage/user_session_service.dart';
 import 'package:localkart/core/utils/snackbar_utils.dart';
+import 'package:localkart/core/widgets/app_background.dart';
+import 'package:localkart/core/widgets/bottom_navigation_bar_for_customer.dart';
 import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/core/widgets/custom_text_field.dart';
-import 'package:localkart/feature/auth/presentation/pages/home_screen.dart';
 import 'package:localkart/feature/auth/presentation/pages/register_screen.dart';
 import 'package:localkart/feature/auth/presentation/states/auth_state.dart';
 import 'package:localkart/feature/auth/presentation/view_model/auth_view_model.dart';
@@ -73,72 +75,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
         Navigator.push(context,MaterialPageRoute(
             builder: (_) =>
-              const HomeScreen(),
+              const BottomNavigationBarForCustomer(),
         ),
      );
           
       }
     });
     return Scaffold(
-      body: Stack(
-        children: [
-          /// Background Gradient
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFF7FBF5),
-                  Color(0xFFEAF7E8),
-                ],
-              ),
-            ),
-          ),
-
-          /// Left Glow
-          Positioned(
-            top: 120,
-            left: -100,
-            child: Container(
-              width: 220,
-              height: 220,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.green.withOpacity(0.08),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.green.withOpacity(0.15),
-                    blurRadius: 120,
-                    spreadRadius: 60,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          /// Bottom Right Glow
-          Positioned(
-            bottom: 80,
-            right: -80,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.green.withOpacity(0.06),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.green.withOpacity(0.12),
-                    blurRadius: 140,
-                    spreadRadius: 70,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          SafeArea(
+      body: AppBackground(
+          child:SafeArea(
             child: SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -156,7 +101,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       decoration: BoxDecoration(
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.green.withOpacity(0.15),
+                            color: AppColors.primary.withOpacity(0.15),
                             blurRadius: 50,
                             spreadRadius: 10,
                           ),
@@ -175,11 +120,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.96),
+                        color: AppColors.white.withOpacity(0.96),
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
+                            color: AppColors.textPrimary.withOpacity(0.08),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -192,7 +137,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             style: TextStyle(
                               fontSize: 30,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1F2937),
+                              color: AppColors.textPrimary,
                             ),
                           ),
 
@@ -203,7 +148,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.black54,
+                              color: AppColors.textSecondary,
                               height: 1.5,
                             ),
                           ),
@@ -252,7 +197,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               Text(
                                 "Forgot?",
                                 style: TextStyle(
-                                  color: Color(0xFF0B6B1D),
+                                  color: AppColors.primary,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -294,7 +239,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             children: [
                               Expanded(
                                 child: Divider(
-                                  color: Colors.grey.shade300,
+                                  color: AppColors.divider,
                                 ),
                               ),
                               const Padding(
@@ -304,7 +249,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                               Expanded(
                                 child: Divider(
-                                  color: Colors.grey.shade300,
+                                  color: AppColors.divider,
                                 ),
                               ),
                             ],
@@ -330,7 +275,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               minimumSize:
                                   const Size(double.infinity, 56),
                               side: BorderSide(
-                                color: Colors.grey.shade300,
+                                color: AppColors.divider,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius:
@@ -349,7 +294,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               const Text(
                                 "Don't have an account? ",
                                 style: TextStyle(
-                                  color: Colors.black54,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                               GestureDetector(
@@ -365,7 +310,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 child: const Text(
                                   "Register now",
                                   style: TextStyle(
-                                    color: Color(0xFF0B6B1D),
+                                    color: AppColors.primary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -382,7 +327,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
             ),
           ),),
-        ],
+        
       ),
     );
   }

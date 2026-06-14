@@ -1,11 +1,127 @@
-import 'package:flutter/material.dart';
-import 'package:localkart/app/theme/app_colors.dart';
+import 'dart:ui';
 
-class ProfileScreen extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:localkart/app/theme/app_colors.dart';
+import 'package:localkart/core/services/storage/user_session_service.dart';
+import 'package:localkart/core/widgets/custom_button.dart';
+import 'package:localkart/core/widgets/custom_icon_button.dart';
+import 'package:localkart/core/widgets/custom_outlined_button.dart';
+import 'package:localkart/feature/auth/presentation/pages/login_screen.dart';
+import 'package:localkart/feature/auth/presentation/view_model/auth_view_model.dart';
+
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+
+  Future<void> _showLogoutDialog() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: 5,
+            sigmaY: 5,
+          ),
+          child: Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(32),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "Confirm Logout",
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.dialogTitle,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                const Text(
+                  "Are you sure you want to logout?",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.black54,
+                  ),
+                ),
+
+                const SizedBox(height: 35),
+
+                /// Logout Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 58,
+                  child: CustomButton(
+                    text: "Logout",
+                    borderRadius: 40,
+                    backgroundColor: AppColors.primary,
+                    onPressed: () async {
+                      Navigator.pop(context);
+
+                      await ref
+                          .read(authViewModelProvider.notifier)
+                          .logout();
+
+                      if (!mounted) return;
+
+                      await ref
+                          .read(userSessionServiceProvider)
+                          .clearSession();
+
+                      if (mounted) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                          (route) => false,
+                        );
+                      }
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                /// Cancel Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 58,
+                  child: CustomOutlinedButton(
+                    text: "Cancel",
+                    borderRadius: 40,
+                    height: 58,
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),);
+      },
+    );
+  }
+  @override
   Widget build(BuildContext context) {
+    
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -34,7 +150,7 @@ class ProfileScreen extends StatelessWidget {
                     child: const Icon(
                       Icons.edit,
                       size: 14,
-                      color: Colors.white,
+                      color: AppColors.card,
                     ),
                   ),
                 ),
@@ -79,7 +195,7 @@ class ProfileScreen extends StatelessWidget {
                 vertical: 14,
               ),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.card,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -110,7 +226,7 @@ class ProfileScreen extends StatelessWidget {
                         Text(
                           "Switch to a darker theme",
                           style: TextStyle(
-                            color: Colors.grey,
+                            color: AppColors.textSecondary,
                             fontSize: 12,
                           ),
                         ),
@@ -163,23 +279,9 @@ class ProfileScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               height: 56,
-              child: ElevatedButton(
+              child: CustomButton(
                 onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(14),
-                  ),
-                ),
-                child: const Text(
-                  "Register Your Store",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                text: 'Register Your Store',
               ),
             ),
 
@@ -189,30 +291,13 @@ class ProfileScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               height: 56,
-              child: ElevatedButton.icon(
-                onPressed: () {},
-                icon: const Icon(
-                  Icons.logout,
-                  color: Colors.red,
-                ),
-                label: const Text(
-                  "Logout",
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      const Color(0xFFFFEEEE),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(14),
-                  ),
-                ),
-              ),
-            ),
+              child: CustomIconButton(
+                text: "Logout",
+                icon: Icons.logout,
+                onPressed: _showLogoutDialog,
+                backgroundColor: AppColors.logoutBackground,
+                foregroundColor: AppColors.logoutText,
+              ),),
 
             const SizedBox(height: 20),
           ],
@@ -228,7 +313,7 @@ class ProfileScreen extends StatelessWidget {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(16),
       ),
       child: ListTile(
@@ -249,7 +334,7 @@ class ProfileScreen extends StatelessWidget {
         ),
         trailing: const Icon(
           Icons.chevron_right,
-          color: Colors.grey,
+          color: AppColors.textSecondary,
         ),
       ),
     );

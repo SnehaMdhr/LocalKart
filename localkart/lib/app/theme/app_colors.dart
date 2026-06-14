@@ -34,4 +34,11 @@ class AppColors {
   static const Color grey = Colors.grey;
 
   static const Color divider = Color(0xFFE5E7EB);
+
+  // Logout Colors
+static const Color logoutBackground = Color(0xFFFFEEEE);
+static const Color logoutText = Color(0xFFE53935);
+
+// Dialog Colors
+static const Color dialogTitle = Color(0xFF102027);
 }

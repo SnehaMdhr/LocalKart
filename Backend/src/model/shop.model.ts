@@ -31,19 +31,25 @@ const ShopSchema: Schema = new Schema<ShopType>(
       required: false,
     },
 
-    category: {
-      type: String,
+    categories: {
+      type: [String],
       enum: [
-        "Grocery",
-        "Electronics",
-        "Clothing",
-        "Restaurant",
-        "Pharmacy",
-        "Stationery",
-        "Hardware",
-        "Other",
+        "Fruits & Vegetables",
+        "Dairy & Eggs",
+        "Meat & Seafood",
+        "Bakery",
+        "Beverages",
+        "Snacks & Confectionery",
+        "Frozen Foods",
+        "Organic & Health Foods",
+        "Pantry Staples",
+        "Baby & Pet",
       ],
       required: true,
+      validate: {
+        validator: (v: string[]) => v.length > 0,
+        message: "At least one category is required",
+      },
     },
 
     status: {

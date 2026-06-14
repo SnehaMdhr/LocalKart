@@ -8,16 +8,18 @@ export const shopSchema = z.object({
   description: z.string().min(10),
   imageUrl: z.string().optional(),
 
-  category: z.enum([
-    "Grocery",
-    "Electronics",
-    "Clothing",
-    "Restaurant",
-    "Pharmacy",
-    "Stationery",
-    "Hardware",
-    "Other"
-  ]),
+  categories: z.array(z.enum([
+    "Fruits & Vegetables",
+    "Dairy & Eggs",
+    "Meat & Seafood",
+    "Bakery",
+    "Beverages",
+    "Snacks & Confectionery",
+    "Frozen Foods",
+    "Organic & Health Foods",
+    "Pantry Staples",
+    "Baby & Pet",
+  ])).min(1),
 
   status: z.enum([
     "pending",

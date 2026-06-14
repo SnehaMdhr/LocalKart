@@ -5,7 +5,7 @@ export const CreateShopDto = shopSchema.pick({
     shopName: true,
     address: true,
     description: true,
-    category: true,
+    categories: true,
 })
 
 export type CreateShopDto = z.infer<typeof CreateShopDto>;

@@ -69,9 +69,9 @@ class UserSessionService {
   String? getCurrentUserName() {
     return _prefs.getString(_keyUserName);
   }
-  // String? getCurrentUserRole() {
-  //   return _prefs.getString(_keyUserRole);
-  // }
+  String? getCurrentUserPhone() {
+    return _prefs.getString(_keyUserPhone);
+  }
 
   // Get current user username
   String? getCurrentUserUsername() {
@@ -89,7 +89,7 @@ class UserSessionService {
     await _prefs.remove(_keyUserId);
     await _prefs.remove(_keyUserEmail);
     await _prefs.remove(_keyUserName);
-    // await _prefs.remove(_keyUserRole);
+    await _prefs.remove(_keyUserPhone);
     await _prefs.remove(_keyUserUsername);
     await _prefs.remove(_keyUserProfilePicture);
   }

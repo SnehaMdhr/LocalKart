@@ -3,12 +3,14 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
+import 'package:localkart/core/api/api_endpoints.dart';
 import 'package:localkart/core/services/storage/user_session_service.dart';
 import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/core/widgets/custom_icon_button.dart';
 import 'package:localkart/core/widgets/custom_outlined_button.dart';
 import 'package:localkart/feature/auth/presentation/pages/login_screen.dart';
 import 'package:localkart/feature/auth/presentation/view_model/auth_view_model.dart';
+import 'package:localkart/feature/profile/presentation/pages/edit_profile_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -19,7 +21,6 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-
   Future<void> _showLogoutDialog() async {
     showDialog(
       context: context,
@@ -31,164 +32,194 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             sigmaY: 5,
           ),
           child: Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.card,
-              borderRadius: BorderRadius.circular(32),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  "Confirm Logout",
-                  style: TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.dialogTitle,
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.card,
+                borderRadius: BorderRadius.circular(32),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "Confirm Logout",
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.dialogTitle,
+                    ),
                   ),
-                ),
-
-                const SizedBox(height: 16),
-
-                const Text(
-                  "Are you sure you want to logout?",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.black54,
+                  const SizedBox(height: 16),
+                  const Text(
+                    "Are you sure you want to logout?",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.black54,
+                    ),
                   ),
-                ),
-
-                const SizedBox(height: 35),
-
-                /// Logout Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 58,
-                  child: CustomButton(
-                    text: "Logout",
-                    borderRadius: 40,
-                    backgroundColor: AppColors.primary,
-                    onPressed: () async {
-                      Navigator.pop(context);
-
-                      await ref
-                          .read(authViewModelProvider.notifier)
-                          .logout();
-
-                      if (!mounted) return;
-
-                      await ref
-                          .read(userSessionServiceProvider)
-                          .clearSession();
-
-                      if (mounted) {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const LoginScreen(),
-                          ),
-                          (route) => false,
-                        );
-                      }
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                /// Cancel Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 58,
-                  child: CustomOutlinedButton(
-                    text: "Cancel",
-                    borderRadius: 40,
+                  const SizedBox(height: 35),
+                  SizedBox(
+                    width: double.infinity,
                     height: 58,
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                    child: CustomButton(
+                      text: "Logout",
+                      borderRadius: 40,
+                      backgroundColor: AppColors.primary,
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        await ref
+                            .read(authViewModelProvider.notifier)
+                            .logout();
+                        if (!mounted) return;
+                        await ref
+                            .read(userSessionServiceProvider)
+                            .clearSession();
+                        if (mounted) {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                            (route) => false,
+                          );
+                        }
+                      },
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 58,
+                    child: CustomOutlinedButton(
+                      text: "Cancel",
+                      borderRadius: 40,
+                      height: 58,
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),);
+        );
       },
     );
   }
   @override
   Widget build(BuildContext context) {
-    
+    final authState = ref.watch(authViewModelProvider);
+    final userSession = ref.read(userSessionServiceProvider);
+    final user = authState.authEntity;
+
+    final userName = user?.name ?? userSession.getCurrentUserName() ?? "Unknown User";
+    final rawProfilePicture = user?.imageUrl ?? userSession.getCurrentUserProfilePicture() ?? "";
+    final profilePicture = rawProfilePicture.isNotEmpty &&
+            !rawProfilePicture.startsWith('http://') &&
+            !rawProfilePicture.startsWith('https://')
+        ? '${ApiEndpoints.mediaServerUrl}/${rawProfilePicture.startsWith('/') ? rawProfilePicture.substring(1) : rawProfilePicture}'
+        : rawProfilePicture;
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
           children: [
             const SizedBox(height: 10),
-
-            /// Profile Image
             Stack(
               children: [
-                const CircleAvatar(
-                  radius: 42,
-                  backgroundImage:
-                      AssetImage('assets/images/profile.jpg'),
-                ),
-
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(5),
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.edit,
-                      size: 14,
-                      color: AppColors.card,
-                    ),
-                  ),
-                ),
+                profilePicture.isNotEmpty
+                    ? ClipOval(
+                        child: SizedBox(
+                          width: 84,
+                          height: 84,
+                          child: Image.network(
+                            profilePicture,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                color: AppColors.primary,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: AppColors.primary,
+                                child: Center(
+                                  child: Text(
+                                    userName.isNotEmpty
+                                        ? userName[0].toUpperCase()
+                                        : "U",
+                                    style: const TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      )
+                    : CircleAvatar(
+                        radius: 42,
+                        backgroundColor: AppColors.primary,
+                        child: Text(
+                          userName.isNotEmpty
+                              ? userName[0].toUpperCase()
+                              : "U",
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
               ],
             ),
-
             const SizedBox(height: 16),
-
-            const Text(
-              "Arav Sharma",
-              style: TextStyle(
+            Text(
+              userName,
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
               ),
             ),
-
-            const SizedBox(height: 6),
-
-            Text(
-              "+977 9841234567",
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 16,
-              ),
-            ),
-
+        
             const SizedBox(height: 30),
-
-            /// Address Card
+            _profileTile(
+              icon: Icons.person_outline,
+              title: "Edit Profile",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const EditProfileScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
             _profileTile(
               icon: Icons.location_on_outlined,
               title: "My Addresses",
               onTap: () {},
             ),
-
             const SizedBox(height: 10),
-
-            /// Dark Mode Tile
             Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16,
@@ -208,9 +239,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       color: AppColors.primary,
                     ),
                   ),
-
                   const SizedBox(width: 14),
-
                   const Expanded(
                     child: Column(
                       crossAxisAlignment:
@@ -233,7 +262,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ],
                     ),
                   ),
-
                   Switch(
                     value: false,
                     onChanged: (value) {},
@@ -242,9 +270,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: 25),
-
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -256,26 +282,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ),
             ),
-
             const SizedBox(height: 12),
-
             _profileTile(
               icon: Icons.shield_outlined,
               title: "Privacy Policy",
               onTap: () {},
             ),
-
             const SizedBox(height: 10),
-
             _profileTile(
               icon: Icons.gavel_outlined,
               title: "Terms of Service",
               onTap: () {},
             ),
-
             const SizedBox(height: 35),
-
-            /// Register Store Button
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -284,10 +303,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 text: 'Register Your Store',
               ),
             ),
-
             const SizedBox(height: 16),
-
-            /// Logout Button
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -297,8 +313,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 onPressed: _showLogoutDialog,
                 backgroundColor: AppColors.logoutBackground,
                 foregroundColor: AppColors.logoutText,
-              ),),
-
+              ),
+            ),
             const SizedBox(height: 20),
           ],
         ),

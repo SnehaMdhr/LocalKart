@@ -5,6 +5,7 @@ import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/services/storage/user_session_service.dart';
 import 'package:localkart/core/widgets/app_background.dart';
 import 'package:localkart/core/widgets/bottom_navigation_bar_for_customer.dart';
+import 'package:localkart/feature/auth/presentation/view_model/auth_view_model.dart';
 import 'package:localkart/feature/onboarding/presentation/pages/onboarding_screen.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -38,7 +39,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final isLoggedIn = userSessionService.isLoggedIn();
 
     if (isLoggedIn) {
-     Navigator.pushReplacement(
+      // Restore the auth state from the API/session
+      if (mounted) {
+        await ref.read(authViewModelProvider.notifier).fetchCurrentUser();
+      }
+      if (!mounted) return;
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) => const BottomNavigationBarForCustomer(),

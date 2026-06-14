@@ -11,6 +11,7 @@ import 'package:localkart/core/widgets/custom_outlined_button.dart';
 import 'package:localkart/feature/auth/presentation/pages/login_screen.dart';
 import 'package:localkart/feature/auth/presentation/view_model/auth_view_model.dart';
 import 'package:localkart/feature/profile/presentation/pages/edit_profile_screen.dart';
+import 'package:localkart/feature/vendor_registeration/presentation/pages/register_shop_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -25,7 +26,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
+      builder: (dialogContext) {
         return BackdropFilter(
           filter: ImageFilter.blur(
             sigmaX: 5,
@@ -68,7 +69,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       borderRadius: 40,
                       backgroundColor: AppColors.primary,
                       onPressed: () async {
-                        Navigator.pop(context);
+                        Navigator.pop(dialogContext);
                         await ref
                             .read(authViewModelProvider.notifier)
                             .logout();
@@ -97,7 +98,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       borderRadius: 40,
                       height: 58,
                       onPressed: () {
-                        Navigator.pop(context);
+                        Navigator.pop(dialogContext);
                       },
                     ),
                   ),
@@ -299,7 +300,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               width: double.infinity,
               height: 56,
               child: CustomButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const RegisterShopScreen(),
+                    ),
+                  );
+                },
                 text: 'Register Your Store',
               ),
             ),

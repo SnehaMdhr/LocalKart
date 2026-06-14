@@ -1,17 +1,20 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
+import 'package:localkart/core/services/storage/user_session_service.dart';
 import 'package:localkart/core/widgets/app_background.dart';
+import 'package:localkart/core/widgets/bottom_navigation_bar_for_customer.dart';
 import 'package:localkart/feature/onboarding/presentation/pages/onboarding_screen.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
@@ -24,16 +27,31 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(seconds: 5),
     )..forward();
 
-    Timer(const Duration(seconds: 5), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const OnboardingScreen(),
-          ),
-        );
-      }
-    });
+    _navigateToNext();
+  }
+
+  void _navigateToNext() async {
+    await Future.delayed(const Duration(seconds: 5));
+    if (!mounted) return;
+
+    final userSessionService = ref.read(userSessionServiceProvider);
+    final isLoggedIn = userSessionService.isLoggedIn();
+
+    if (isLoggedIn) {
+     Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const BottomNavigationBarForCustomer(),
+        ),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const OnboardingScreen(),
+        ),
+      );
+    }
   }
 
   @override

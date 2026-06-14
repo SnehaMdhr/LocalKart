@@ -14,7 +14,7 @@ import '../datasources/local/auth_local_datasource.dart';
 final authRepositoryProvider = Provider<IAuthRepository>((ref) {
   final authDatasource = ref.read(authLocalDatasourceProvider);
   final authRemoteDatasource = ref.read(authRemoteDatasourceProvider);
-  final networkInfo = ref.read(NetworkInfoProvider);
+  final networkInfo = ref.read(networkInfoProvider);
   return AuthRepository(
     authLocalDatasource: authDatasource,
     authRemoteDatasource: authRemoteDatasource,

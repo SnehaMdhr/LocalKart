@@ -5,6 +5,7 @@ import 'package:localkart/core/services/storage/user_session_service.dart';
 import 'package:localkart/core/utils/snackbar_utils.dart';
 import 'package:localkart/core/widgets/app_background.dart';
 import 'package:localkart/core/widgets/bottom_navigation_bar_for_customer.dart';
+import 'package:localkart/core/widgets/bottom_navigation_bar_for_vendor.dart';
 import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/core/widgets/custom_text_field.dart';
 import 'package:localkart/feature/auth/presentation/pages/register_screen.dart';
@@ -70,14 +71,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               name: user.name,
               phone: user.phone,
               username: user.username,
+              role: user.role,
               profilePicture: user.imageUrl,
             );
 
-        Navigator.push(context,MaterialPageRoute(
-            builder: (_) =>
-              const BottomNavigationBarForCustomer(),
-        ),
-     );
+        final role = user.role ?? 'Customer';
+        Widget destination;
+        if (role == 'Customer') {
+          destination = const BottomNavigationBarForCustomer();
+        } else {
+          destination = const BottomNavigationBarForVendor();
+        }
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => destination),
+        );
           
       }
     });

@@ -5,6 +5,7 @@ import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/services/storage/user_session_service.dart';
 import 'package:localkart/core/widgets/app_background.dart';
 import 'package:localkart/core/widgets/bottom_navigation_bar_for_customer.dart';
+import 'package:localkart/core/widgets/bottom_navigation_bar_for_vendor.dart';
 import 'package:localkart/feature/auth/presentation/view_model/auth_view_model.dart';
 import 'package:localkart/feature/onboarding/presentation/pages/onboarding_screen.dart';
 
@@ -44,11 +45,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         await ref.read(authViewModelProvider.notifier).fetchCurrentUser();
       }
       if (!mounted) return;
+
+      final role = userSessionService.getCurrentUserRole() ?? 'Customer';
+      Widget destination;
+      if (role == 'Shopkeeper') {
+        destination = const BottomNavigationBarForVendor();
+      } else {
+        destination = const BottomNavigationBarForCustomer();
+      }
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => const BottomNavigationBarForCustomer(),
-        ),
+        MaterialPageRoute(builder: (_) => destination),
       );
     } else {
       Navigator.pushReplacement(

@@ -13,7 +13,6 @@ class RegisterUsecaseParams extends Equatable {
   final String name;
   final String email;
   final String? phone;
-  // final String role;
   final String? username;
   final String password;
   final String confirmPassword;
@@ -22,7 +21,6 @@ class RegisterUsecaseParams extends Equatable {
     required this.name,
     required this.email,
     this.phone,
-    // required this.role,
     required this.username,
     required this.password,
     required this.confirmPassword,
@@ -47,7 +45,6 @@ class RegisterUsecase implements UseCaseWithParams<bool, RegisterUsecaseParams> 
         name: params.name,
         email: params.email,
         phone: params.phone,
-        // role: params.role,
         username: params.username,
         password: params.password,
         confirmPassword: params.confirmPassword);

@@ -21,7 +21,7 @@ class UserSessionService {
   static const String _keyUserEmail = 'user_email';
   static const String _keyUserName = 'user_full_name';
   static const String _keyUserPhone = 'user_phone';
-  // static const String _keyUserRole = 'user_role';
+  static const String _keyUserRole = 'user_role';
   static const String _keyUserUsername = 'user_username';
   static const String _keyUserProfilePicture = 'user_profile_picture';
 
@@ -34,6 +34,7 @@ class UserSessionService {
     required String name,
     String? phone,
     String? username,
+    String? role,
     String? profilePicture,
   }) async {
     await _prefs.setBool(_keyIsLoggedIn, true);
@@ -44,7 +45,9 @@ class UserSessionService {
       await _prefs.setString(_keyUserPhone, phone);
     }
     await _prefs.setString(_keyUserUsername, username ?? '');
-    // await _prefs.setString(_keyUserRole, role);
+    if (role != null) {
+      await _prefs.setString(_keyUserRole, role);
+    }
     if (profilePicture != null) {
       await _prefs.setString(_keyUserProfilePicture, profilePicture);
     }
@@ -78,6 +81,11 @@ class UserSessionService {
     return _prefs.getString(_keyUserUsername);
   }
 
+  // Get current user role
+  String? getCurrentUserRole() {
+    return _prefs.getString(_keyUserRole);
+  }
+
   // Get current user profile picture
   String? getCurrentUserProfilePicture() {
     return _prefs.getString(_keyUserProfilePicture);
@@ -91,6 +99,7 @@ class UserSessionService {
     await _prefs.remove(_keyUserName);
     await _prefs.remove(_keyUserPhone);
     await _prefs.remove(_keyUserUsername);
+    await _prefs.remove(_keyUserRole);
     await _prefs.remove(_keyUserProfilePicture);
   }
 }

@@ -5,4 +5,7 @@ class HiveTableConstant {
 
   static const int userTypeId = 0;
   static const String userTable = "user_table";
+
+  static const int shopTypeId = 1;
+  static const String shopTable = "shop_table";
 }

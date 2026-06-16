@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/utils/snackbar_utils.dart';
+import 'package:localkart/core/widgets/app_background.dart';
 import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/core/widgets/custom_text_field.dart';
 import 'package:localkart/feature/auth/presentation/pages/login_screen.dart';
@@ -76,65 +78,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       }
     });
     return Scaffold(
-      body: Stack(
-        children: [
-          /// Background Gradient
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFF7FBF5),
-                  Color(0xFFEAF7E8),
-                ],
-              ),
-            ),
-          ),
-
-          /// Left Glow
-          Positioned(
-            top: 120,
-            left: -100,
-            child: Container(
-              width: 220,
-              height: 220,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.green.withOpacity(0.08),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.green.withOpacity(0.15),
-                    blurRadius: 120,
-                    spreadRadius: 60,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          /// Bottom Glow
-          Positioned(
-            bottom: 80,
-            right: -80,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.green.withOpacity(0.06),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.green.withOpacity(0.12),
-                    blurRadius: 140,
-                    spreadRadius: 70,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          SafeArea(
+      body: AppBackground(
+          child:SafeArea(
             child: SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -152,7 +97,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       decoration: BoxDecoration(
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.green.withOpacity(0.15),
+                            color: AppColors.primary.withOpacity(0.15),
                             blurRadius: 50,
                             spreadRadius: 10,
                           ),
@@ -171,11 +116,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.96),
+                        color: AppColors.white.withOpacity(0.96),
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
+                            color: AppColors.textPrimary.withOpacity(0.08),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -188,7 +133,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             style: TextStyle(
                               fontSize: 30,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1F2937),
+                              color: AppColors.textPrimary,
                             ),
                           ),
 
@@ -199,7 +144,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.black54,
+                              color: AppColors.textSecondary,
                             ),
                           ),
 
@@ -367,7 +312,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               const Text(
                                 "Already have an account? ",
                                 style: TextStyle(
-                                  color: Colors.black54,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                               GestureDetector(
@@ -380,7 +325,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 child: const Text(
                                   "Login now",
                                   style: TextStyle(
-                                    color: Color(0xFF0B6B1D),
+                                    color: AppColors.primary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -398,7 +343,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ),
           ),
           ),
-        ],
       ),
     );
   }

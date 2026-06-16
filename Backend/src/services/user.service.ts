@@ -85,4 +85,45 @@ export class UserService {
 
   return updateUser;
 }
+
+async getAllUsers(page?: string, size?: string, search?: string) {
+    const pageNumber = page ? parseInt(page, 10) : 1;
+    const pageSize = size ? parseInt(size, 10) : 10;
+
+    const { users, total } = await userRepository.getAllPaginated(
+      pageNumber,
+      pageSize,
+      search,
+    );
+
+    const pagination = {
+      page: pageNumber,
+      size: pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    };
+
+    return { users, pagination };
+  }
+  async getOneUser(id: string) {
+    const user = await userRepository.getUsersById(id);
+    if (!user) {
+      throw new HttpError(404, "User not found");
+    }
+    return user;
+  }
+  async deleteUser(id: string) {
+    const user = await userRepository.getUsersById(id);
+
+    if (user && user.imageUrl) {
+      try {
+        deleteUploadIfExists(user.imageUrl);
+      } catch (error) {
+        console.error("Error deleting user image:", error);
+      }
+    }
+
+    const isDeleted = await userRepository.deleteUser(id);
+    return isDeleted;
+  }
 }

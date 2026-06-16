@@ -19,10 +19,12 @@ class CustomTextField extends StatefulWidget {
   });
 
   @override
-  State<CustomTextField> createState() => _CustomTextFieldState();
+  State<CustomTextField> createState() =>
+      _CustomTextFieldState();
 }
 
-class _CustomTextFieldState extends State<CustomTextField> {
+class _CustomTextFieldState
+    extends State<CustomTextField> {
   bool obscure = true;
 
   @override
@@ -31,34 +33,28 @@ class _CustomTextFieldState extends State<CustomTextField> {
       controller: widget.controller,
       validator: widget.validator,
       keyboardType: widget.keyboardType,
-      obscureText: widget.isPassword ? obscure : false,
+      obscureText:
+          widget.isPassword ? obscure : false,
       decoration: InputDecoration(
-        filled: true,
-        fillColor: const Color(0xFFF1F4F8),
         hintText: widget.hint,
         prefixIcon: Icon(
           widget.prefixIcon,
           size: 20,
-          color: Colors.grey,
         ),
         suffixIcon: widget.isPassword
             ? IconButton(
-                icon: Icon(
-                  obscure
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                ),
                 onPressed: () {
                   setState(() {
                     obscure = !obscure;
                   });
                 },
+                icon: Icon(
+                  obscure
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                ),
               )
             : null,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide.none,
-        ),
       ),
     );
   }

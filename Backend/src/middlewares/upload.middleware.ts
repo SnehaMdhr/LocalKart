@@ -20,7 +20,6 @@ export const deleteUploadIfExists = (filePath: string): void => {
 
     if (fs.existsSync(fullPath)) {
       fs.unlinkSync(fullPath);
-      console.log("Deleted file:", fullPath);
     }
   } catch (error) {
     console.error("Error deleting file:", error);

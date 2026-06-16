@@ -1,15 +1,22 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:localkart/app/theme/app_colors.dart';
+import 'package:localkart/core/services/storage/user_session_service.dart';
+import 'package:localkart/core/widgets/app_background.dart';
+import 'package:localkart/core/widgets/bottom_navigation_bar_for_customer.dart';
+import 'package:localkart/core/widgets/bottom_navigation_bar_for_vendor.dart';
+import 'package:localkart/feature/auth/presentation/view_model/auth_view_model.dart';
 import 'package:localkart/feature/onboarding/presentation/pages/onboarding_screen.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
@@ -22,16 +29,43 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(seconds: 5),
     )..forward();
 
-    Timer(const Duration(seconds: 5), () {
+    _navigateToNext();
+  }
+
+  void _navigateToNext() async {
+    await Future.delayed(const Duration(seconds: 5));
+    if (!mounted) return;
+
+    final userSessionService = ref.read(userSessionServiceProvider);
+    final isLoggedIn = userSessionService.isLoggedIn();
+
+    if (isLoggedIn) {
+      // Restore the auth state from the API/session
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const OnboardingScreen(),
-          ),
-        );
+        await ref.read(authViewModelProvider.notifier).fetchCurrentUser();
       }
-    });
+      if (!mounted) return;
+
+      final role = userSessionService.getCurrentUserRole() ?? 'Customer';
+      Widget destination;
+      if (role == 'Shopkeeper') {
+        destination = const BottomNavigationBarForVendor();
+      } else {
+        destination = const BottomNavigationBarForCustomer();
+      }
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => destination),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const OnboardingScreen(),
+        ),
+      );
+    }
   }
 
   @override
@@ -39,157 +73,75 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.dispose();
     super.dispose();
   }
-
-  Widget _backgroundGlow({
-    required double size,
-    required double top,
-    required double left,
-    required double opacity,
-  }) {
-    return Positioned(
-      top: top,
-      left: left,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: const Color(0xFF4CAF50).withOpacity(opacity),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF4CAF50).withOpacity(opacity),
-              blurRadius: 120,
-              spreadRadius: 60,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          /// Base background
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFFFFFFF),
-                  Color(0xFFF9FCF8),
-                  Color(0xFFFFFFFF),
-                ],
-              ),
-            ),
-          ),
+      body: AppBackground(
+        child: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  /// Logo
+                  Image.asset(
+                    'assets/images/logo.png',
+                    height: 115,
+                  ),
 
-          /// Left glow (matches screenshot)
-          _backgroundGlow(
-            size: 220,
-            top: 150,
-            left: -120,
-            opacity: 0.08,
-          ),
+                  const SizedBox(height: 24),
 
-          /// Bottom-right glow
-          _backgroundGlow(
-            size: 260,
-            top: 600,
-            left: 220,
-            opacity: 0.06,
-          ),
+                  const Text(
+                    'Groceries from nearby stores, delivered\nfast',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      height: 1.5,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
 
-          /// Additional subtle center glow
-          Positioned(
-            bottom: 120,
-            left: 80,
-            child: Container(
-              width: 180,
-              height: 180,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFF81C784).withOpacity(0.05),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF81C784).withOpacity(0.08),
-                    blurRadius: 100,
-                    spreadRadius: 50,
+                  const SizedBox(height: 35),
+
+                  /// Progress Bar
+                  SizedBox(
+                    width: 140,
+                    child: AnimatedBuilder(
+                      animation: _controller,
+                      builder: (context, child) {
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: LinearProgressIndicator(
+                            value: _controller.value,
+                            minHeight: 4,
+                            backgroundColor: AppColors.divider,
+                            valueColor:
+                                const AlwaysStoppedAnimation<Color>(
+                              AppColors.primary,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  const Text(
+                    'Syncing with local stores...',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-
-          SafeArea(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    /// Logo
-                    Image.asset(
-                      'assets/images/logo.png',
-                      height: 115,
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    const Text(
-                      'Groceries from nearby stores, delivered\nfast',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 15,
-                        height: 1.5,
-                        color: Color(0xFF666666),
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-
-                    const SizedBox(height: 35),
-
-                    /// Progress Bar
-                    SizedBox(
-                      width: 140,
-                      child: AnimatedBuilder(
-                        animation: _controller,
-                        builder: (context, child) {
-                          return ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: LinearProgressIndicator(
-                              value: _controller.value,
-                              minHeight: 4,
-                              backgroundColor: const Color(0xFFE0E0E0),
-                              valueColor:
-                                  const AlwaysStoppedAnimation<Color>(
-                                Color(0xFF2E7D32),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    const Text(
-                      'Syncing with local stores...',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF8A8A8A),
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

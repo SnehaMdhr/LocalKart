@@ -5,6 +5,11 @@ import { CreateUserDto, LoginUserDTO, UpdateUserDTO } from "../dtos/user.dtos";
 
 
 let userService = new UserService();
+interface QueryParams {
+    page?: string;
+    size?: string;
+    search?: string;
+}
 
 export class AuthController{
     async register (req: Request, res: Response){
@@ -70,7 +75,7 @@ export class AuthController{
 
     async updateUser(req: Request, res: Response) {
         try{
-            const userId = req.user?._id;
+            const userId = req.params.id || req.user?._id;
             if(!userId){
                 return res.status(400).json(
                     { success: false, message: "User ID not provided" }
@@ -95,4 +100,76 @@ export class AuthController{
             );
         }
     }
+
+     async getOneUser(req: Request, res: Response){
+        try{
+            const userId = req.params.id as string; // routes /:id
+            const user = await userService.getOneUser(userId);
+            return res.status(200).json(
+                { success: true, data: user }
+            );
+        }catch(error: Error | any){
+            return res.status(error.statusCode ?? 500).json(
+                {success: false, message: error.message || "Internal Server Error" }
+            );   
+        }
+    }
+
+    
+    async getAllUsers(req: Request, res: Response) {
+        try {
+            const queryParams = req.query as QueryParams;
+
+            const { users, pagination } = await userService.getAllUsers(
+                queryParams.page,
+                queryParams.size,
+                queryParams.search
+            );
+
+            return res.status(200).json({
+                success: true,
+                data: users,
+                pagination
+            });
+        } catch (error: Error | any) {
+            return res.status(500).json({
+                success: false,
+                message: "Internal server error"
+            });
+        }
+    }
+
+async deleteUser(req: Request, res: Response) {
+  try {
+    const userId = req.params.id || req.user?._id;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required",
+      });
+    }
+
+    const isDeleted = await userService.deleteUser(userId);
+
+    if (!isDeleted) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User deleted successfully",
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+}
+
 }

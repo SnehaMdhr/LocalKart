@@ -4,6 +4,8 @@ import cors from 'cors';
 import dotenv from "dotenv";
 import path from "path";
 import userRoutes from './routes/user.routes';
+import shopRoutes from "./routes/shop.routes";
+import productRoutes from './routes/product.routes';
 
 dotenv.config();
 // can use .env variable below this
@@ -23,7 +25,8 @@ app.use(cors(corsOptions)); // implement cors middleware
 
 app.use(bodyParser.json());
 app.use("/api/auth", userRoutes);
-
+app.use("/api/shop", shopRoutes);
+app.use("/api/product", productRoutes);
 
 app.get('/', (req: Request, res: Response) => {
     res.send('Hello, World!');

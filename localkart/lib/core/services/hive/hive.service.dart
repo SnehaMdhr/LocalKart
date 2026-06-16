@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:localkart/core/constants/hive_table_constants.dart';
 import 'package:localkart/feature/auth/data/models/auth_hive_model.dart';
+import 'package:localkart/feature/vendor_registeration/data/models/shop_hive_model.dart';
 import 'package:path_provider/path_provider.dart';
 
 final hiveServiceProvider = Provider<HiveService>((ref){
@@ -23,10 +24,14 @@ class HiveService {
     if(!Hive.isAdapterRegistered(HiveTableConstant.userTypeId)){
       Hive.registerAdapter(AuthHiveModelAdapter());
     }
+    if(!Hive.isAdapterRegistered(HiveTableConstant.shopTypeId)){
+      Hive.registerAdapter(ShopHiveModelAdapter());
+    }
   }
   //Open boxes
   Future<void> openBoxes() async{
     await Hive.openBox<AuthHiveModel>(HiveTableConstant.userTable);
+    await Hive.openBox<ShopHiveModel>(HiveTableConstant.shopTable);
   }
   //close boxes
   Future <void> close() async{
@@ -63,5 +68,18 @@ class HiveService {
     return users.isNotEmpty;
   }
 
+  // ============ Shop Queries ============
+
+  Box<ShopHiveModel> get _shopBox {
+    if (!Hive.isBoxOpen(HiveTableConstant.shopTable)) {
+      throw Exception('Hive box ${HiveTableConstant.shopTable} is not open');
+    }
+    return Hive.box<ShopHiveModel>(HiveTableConstant.shopTable);
+  }
+
+  Future<ShopHiveModel> registerShop(ShopHiveModel model) async {
+    await _shopBox.put(model.shopId, model);
+    return model;
+  }
 }
 

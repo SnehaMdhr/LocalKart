@@ -6,7 +6,7 @@ abstract interface class INetworkInfo{
   Future <bool> get isConnected;
 }
 
-final NetworkInfoProvider = Provider<NetworkInfo>((ref) {
+final networkInfoProvider = Provider<NetworkInfo>((ref) {
   return NetworkInfo(Connectivity());
 });
 

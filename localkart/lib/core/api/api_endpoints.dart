@@ -45,4 +45,9 @@ class ApiEndpoints {
   static const String registerShop = "/shop/register-shop";
   static const String myShop = "/shop/my-shop";
   static String updateShop = "/shop/update-shop";
+
+
+  //=============== Product Endpoints ============
+  static const String getAllProduct = "/product/";
+  static const String getProductById = "/product/:id";
 }

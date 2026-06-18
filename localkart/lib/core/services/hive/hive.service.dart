@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:localkart/core/constants/hive_table_constants.dart';
 import 'package:localkart/feature/auth/data/models/auth_hive_model.dart';
+import 'package:localkart/feature/product/data/models/product_hive_model.dart';
 import 'package:localkart/feature/vendor_registeration/data/models/shop_hive_model.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -27,11 +28,16 @@ class HiveService {
     if(!Hive.isAdapterRegistered(HiveTableConstant.shopTypeId)){
       Hive.registerAdapter(ShopHiveModelAdapter());
     }
+
+    if(!Hive.isAdapterRegistered(HiveTableConstant.productTypeId)){
+      Hive.registerAdapter(ProductHiveModelAdapter());
+    }
   }
   //Open boxes
   Future<void> openBoxes() async{
     await Hive.openBox<AuthHiveModel>(HiveTableConstant.userTable);
     await Hive.openBox<ShopHiveModel>(HiveTableConstant.shopTable);
+    await Hive.openBox<ProductHiveModel>(HiveTableConstant.productTable);
   }
   //close boxes
   Future <void> close() async{
@@ -80,6 +86,30 @@ class HiveService {
   Future<ShopHiveModel> registerShop(ShopHiveModel model) async {
     await _shopBox.put(model.shopId, model);
     return model;
+  }
+
+
+  // ======== Product Queries ===============
+  Box<ProductHiveModel> get _productBox{
+    if(!Hive.isBoxOpen(HiveTableConstant.productTable)){
+      throw Exception("Hive box ${HiveTableConstant.productTable} is not open");
+    }
+    return Hive.box<ProductHiveModel>(HiveTableConstant.productTable);
+  }
+
+  Future<List<ProductHiveModel>> getAllProducts() async {
+    return _productBox.values.toList();
+  }
+
+  Future<ProductHiveModel?> getProductById(String productId) async {
+    return _productBox.get(productId);
+  }
+   Future<void> cacheProducts(List<ProductHiveModel> products) async {
+    await _productBox.clear();
+
+    for (var product in products) {
+      await _productBox.put(product.productId, product);
+    }
   }
 }
 

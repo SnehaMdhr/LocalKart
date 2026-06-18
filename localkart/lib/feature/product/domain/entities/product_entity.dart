@@ -7,6 +7,7 @@ class ProductEntity extends Equatable {
   final String categoryName;
   final String? imageUrl;
   final String unit;
+  final int price;
 
   const ProductEntity({
     this.productId,
@@ -14,6 +15,7 @@ class ProductEntity extends Equatable {
     this.description,
     required this.categoryName,
     this.imageUrl,
+    required this.price,
     required this.unit,
   });
 
@@ -23,6 +25,7 @@ class ProductEntity extends Equatable {
     productName,
     description,
     categoryName,
+    price,
     imageUrl,
     unit,
   ];

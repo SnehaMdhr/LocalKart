@@ -37,7 +37,14 @@ class HiveService {
   Future<void> openBoxes() async{
     await Hive.openBox<AuthHiveModel>(HiveTableConstant.userTable);
     await Hive.openBox<ShopHiveModel>(HiveTableConstant.shopTable);
-    await Hive.openBox<ProductHiveModel>(HiveTableConstant.productTable);
+    
+    // Handle corrupted product data
+    try {
+      await Hive.openBox<ProductHiveModel>(HiveTableConstant.productTable);
+    } catch (e) {
+      await Hive.deleteBoxFromDisk(HiveTableConstant.productTable);
+      await Hive.openBox<ProductHiveModel>(HiveTableConstant.productTable);
+    }
   }
   //close boxes
   Future <void> close() async{

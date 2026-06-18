@@ -23,6 +23,10 @@ class ProductHiveModel extends HiveObject {
 
   @HiveField(5)
   final String unit;
+
+  @HiveField(6)
+  final int price;
+  
   ProductHiveModel({
     String? productId,
     required this.productName,
@@ -30,6 +34,7 @@ class ProductHiveModel extends HiveObject {
     required this.categoryName,
     this.imageUrl,
     required this.unit,
+    required this.price,
   }) : productId = productId ?? const Uuid().v4();
 
   factory ProductHiveModel.fromEntity(ProductEntity entity) {
@@ -40,6 +45,7 @@ class ProductHiveModel extends HiveObject {
       categoryName: entity.categoryName,
       unit: entity.unit,
       imageUrl: entity.imageUrl,
+      price: entity.price,
     );
   }
 
@@ -52,6 +58,7 @@ class ProductHiveModel extends HiveObject {
       categoryName: categoryName,
       unit: unit,
       imageUrl: imageUrl ?? "",
+      price: price,
     );
   }
 

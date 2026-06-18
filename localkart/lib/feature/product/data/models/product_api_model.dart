@@ -4,6 +4,7 @@ import 'package:localkart/feature/product/domain/entities/product_entity.dart';
 class ProductApiModel {
   final String? productId;
   final String productName;
+  final int price;
   final String? description;
   final String categoryName;
   final String unit;
@@ -11,6 +12,7 @@ class ProductApiModel {
 
   ProductApiModel({
     this.productId,
+    required this.price,
     required this.productName,
     this.description,
     required this.categoryName,
@@ -24,6 +26,7 @@ class ProductApiModel {
       "description": description,
       "categoryName": categoryName,
       "unit": unit,
+      "price":price,
     };
 
     if (imageUrl != null && imageUrl!.trim().isNotEmpty) {
@@ -40,6 +43,7 @@ class ProductApiModel {
       categoryName: json["categoryName"] as String? ?? "",
       unit: json["unit"] as String? ?? "",
       imageUrl: json["imageUrl"] as String? ?? "",
+      price: json["price"] as int? ?? 0,
     );
   }
 
@@ -50,6 +54,7 @@ class ProductApiModel {
       description: description ?? "",
       categoryName: categoryName,
       unit: unit,
+      price: price,
       imageUrl: imageUrl ?? "",
     );
   }
@@ -62,6 +67,7 @@ class ProductApiModel {
       categoryName: entity.categoryName,
       unit: entity.unit,
       imageUrl: entity.imageUrl,
+      price: entity.price,
     );
   }
 
@@ -83,6 +89,7 @@ class ProductApiModel {
       categoryName: categoryName,
       unit: unit,
       imageUrl: imageUrl,
+      price: price,
     );
   }
 }

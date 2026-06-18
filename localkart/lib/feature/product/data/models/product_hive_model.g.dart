@@ -19,17 +19,18 @@ class ProductHiveModelAdapter extends TypeAdapter<ProductHiveModel> {
     return ProductHiveModel(
       productId: fields[0] as String?,
       productName: fields[1] as String,
-      description: fields[2] as String,
+      description: fields[2] as String?,
       categoryName: fields[3] as String,
-      imageUrl: fields[4] as String,
+      imageUrl: fields[4] as String?,
       unit: fields[5] as String,
+      price: (fields[6] as num).toInt(),
     );
   }
 
   @override
   void write(BinaryWriter writer, ProductHiveModel obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.productId)
       ..writeByte(1)
@@ -41,7 +42,9 @@ class ProductHiveModelAdapter extends TypeAdapter<ProductHiveModel> {
       ..writeByte(4)
       ..write(obj.imageUrl)
       ..writeByte(5)
-      ..write(obj.unit);
+      ..write(obj.unit)
+      ..writeByte(6)
+      ..write(obj.price);
   }
 
   @override

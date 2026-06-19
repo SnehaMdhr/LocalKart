@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/services/storage/user_session_service.dart';
 import 'package:localkart/feature/auth/presentation/pages/discover_screen.dart';
+import 'package:localkart/feature/product/presentation/pages/product_detail_screen.dart';
 import 'package:localkart/feature/product/presentation/states/product_state.dart';
 import 'package:localkart/feature/product/presentation/view_model/product_view_model.dart';
 import 'package:localkart/feature/product/presentation/widgets/product_card.dart';
@@ -57,27 +58,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// Search Bar
-          Container(
-            height: 50,
-            decoration: BoxDecoration(
-              color: AppColors.card,
-              borderRadius: BorderRadius.circular(25),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: TextField(
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                prefixIcon: const Icon(Icons.search, color: AppColors.primary),
-                hintText: "Search for 'Organic Milk' or 'Dairy'",
-                hintStyle: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ),
-
+          
           const SizedBox(height: 18),
 
           /// Banner
@@ -158,7 +139,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               childAspectRatio: 0.72,
             ),
             itemBuilder: (context, index) {
-              return ProductCard(product: state.products[index]);
+              final product = state.products[index];
+              return ProductCard(
+                product: product,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProductDetailScreen(product: product),
+                    ),
+                  );
+                },
+              );
             },
           ),
         ],

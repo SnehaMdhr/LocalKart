@@ -37,7 +37,7 @@ class ProductApiModel {
 
   factory ProductApiModel.fromJson(Map<String, dynamic> json) {
     return ProductApiModel(
-      productId: json["productId"] as String? ?? json["_productId"] as String?,
+      productId: json["productId"] as String? ?? json["_productId"] as String? ?? json["_id"] as String?,
       productName: json["productName"] as String? ?? "",
       description: json["description"] as String? ?? "",
       categoryName: json["categoryName"] as String? ?? "",

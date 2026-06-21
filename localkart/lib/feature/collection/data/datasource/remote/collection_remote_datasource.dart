@@ -131,4 +131,29 @@ class CollectionRemoteDatasource implements ICollectionRemoteDatasource {
       rethrow;
     }
   }
+
+  @override
+  Future<CollectionApiModel?> updateCollectionName(
+    String collectionId,
+    String newName,
+  ) async {
+    try {
+      final path = ApiEndpoints.updateCollection
+          .replaceAll(':id', collectionId);
+      final response = await _apiClient.put(
+        path,
+        data: {"collectionName": newName},
+      );
+
+      final data = response.data as Map<String, dynamic>?;
+      if (data == null) return null;
+
+      final collectionData = data['data'] as Map<String, dynamic>?;
+      if (collectionData == null) return null;
+
+      return CollectionApiModel.fromJson(collectionData);
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

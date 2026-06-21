@@ -244,4 +244,37 @@ class CollectionRepository implements ICollectionRepository {
       return Left(NetworkFailure());
     }
   }
+
+  @override
+  Future<Either<Failure, CollectionEntity>> updateCollectionName(
+    String collectionId,
+    String newName,
+  ) async {
+    if (await _networkInfo.isConnected) {
+      try {
+        final result = await _remoteDatasource.updateCollectionName(
+          collectionId,
+          newName,
+        );
+
+        if (result == null) {
+          return Left(ApiFailure(message: "Failed to update collection name"));
+        }
+
+        return Right(result.toEntity());
+      } on DioException catch (e) {
+        return Left(
+          ApiFailure(
+            message: e.response?.data["message"] ??
+                "Failed to update collection name",
+            statusCode: e.response?.statusCode,
+          ),
+        );
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    } else {
+      return Left(NetworkFailure());
+    }
+  }
 }

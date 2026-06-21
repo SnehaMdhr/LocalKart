@@ -20,4 +20,8 @@ abstract interface class ICollectionRemoteDatasource {
     String collectionId,
     String productId,
   );
+  Future<CollectionApiModel?> updateCollectionName(
+    String collectionId,
+    String newName,
+  );
 }

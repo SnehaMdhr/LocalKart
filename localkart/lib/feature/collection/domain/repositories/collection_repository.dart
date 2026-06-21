@@ -15,4 +15,8 @@ abstract interface class ICollectionRepository {
     String collectionId,
     String productId,
   );
+  Future<Either<Failure, CollectionEntity>> updateCollectionName(
+    String collectionId,
+    String newName,
+  );
 }

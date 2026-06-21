@@ -5,6 +5,7 @@ import 'package:localkart/feature/collection/domain/usecases/delete_collection_u
 import 'package:localkart/feature/collection/domain/usecases/get_all_collections_usecase.dart';
 import 'package:localkart/feature/collection/domain/usecases/get_collection_by_id_usecase.dart';
 import 'package:localkart/feature/collection/domain/usecases/remove_product_from_collection_usecase.dart';
+import 'package:localkart/feature/collection/domain/usecases/update_collection_name_usecase.dart';
 import 'package:localkart/feature/collection/presentation/states/collection_state.dart';
 
 final collectionViewModelProvider =
@@ -19,6 +20,7 @@ class CollectionViewModel extends Notifier<CollectionState> {
   late final AddProductToCollectionUsecase _addProductToCollectionUsecase;
   late final RemoveProductFromCollectionUsecase
       _removeProductFromCollectionUsecase;
+  late final UpdateCollectionNameUsecase _updateCollectionNameUsecase;
 
   @override
   CollectionState build() {
@@ -30,6 +32,8 @@ class CollectionViewModel extends Notifier<CollectionState> {
         ref.read(addProductToCollectionUsecaseProvider);
     _removeProductFromCollectionUsecase =
         ref.read(removeProductFromCollectionUsecaseProvider);
+    _updateCollectionNameUsecase =
+        ref.read(updateCollectionNameUsecaseProvider);
 
     return const CollectionState();
   }
@@ -168,6 +172,37 @@ class CollectionViewModel extends Notifier<CollectionState> {
       },
       (updatedCollection) {
         state = state.copyWith(
+          collections: state.collections.map((c) {
+            if (c.collectionId == collectionId) return updatedCollection;
+            return c;
+          }).toList(),
+          selectedCollection: updatedCollection,
+          errorMessage: null,
+        );
+      },
+    );
+  }
+
+  Future<void> updateCollectionName(
+      String collectionId, String newName) async {
+    state = state.copyWith(isUpdating: true, errorMessage: null);
+    final params = UpdateCollectionNameParams(
+      collectionId: collectionId,
+      newName: newName,
+    );
+
+    final result = await _updateCollectionNameUsecase(params);
+
+    result.fold(
+      (failure) {
+        state = state.copyWith(
+          isUpdating: false,
+          errorMessage: failure.message,
+        );
+      },
+      (updatedCollection) {
+        state = state.copyWith(
+          isUpdating: false,
           collections: state.collections.map((c) {
             if (c.collectionId == collectionId) return updatedCollection;
             return c;

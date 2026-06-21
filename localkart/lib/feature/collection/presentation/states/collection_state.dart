@@ -10,6 +10,7 @@ class CollectionState extends Equatable {
   final String? errorMessage;
   final bool isCreating;
   final bool isDeleting;
+  final bool isUpdating;
 
   const CollectionState({
     this.status = CollectionStatus.initial,
@@ -18,6 +19,7 @@ class CollectionState extends Equatable {
     this.errorMessage,
     this.isCreating = false,
     this.isDeleting = false,
+    this.isUpdating = false,
   });
 
   CollectionState copyWith({
@@ -27,6 +29,7 @@ class CollectionState extends Equatable {
     String? errorMessage,
     bool? isCreating,
     bool? isDeleting,
+    bool? isUpdating,
   }) {
     return CollectionState(
       status: status ?? this.status,
@@ -35,6 +38,7 @@ class CollectionState extends Equatable {
       errorMessage: errorMessage ?? this.errorMessage,
       isCreating: isCreating ?? this.isCreating,
       isDeleting: isDeleting ?? this.isDeleting,
+      isUpdating: isUpdating ?? this.isUpdating,
     );
   }
 
@@ -46,5 +50,6 @@ class CollectionState extends Equatable {
     errorMessage,
     isCreating,
     isDeleting,
+    isUpdating,
   ];
 }

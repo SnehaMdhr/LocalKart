@@ -58,4 +58,5 @@ class ApiEndpoints {
   static const String deleteCollection = "/collection/:id";
   static const String addProductToCollection = "/collection/:id/add-product";
   static const String removeProductFromCollection = "/collection/:id/remove-product";
+  static const String updateCollection = "/collection/:id";
 }

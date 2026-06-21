@@ -56,10 +56,12 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     final productId = widget.product.productId;
 
     // Check if this product exists in any collection
-    final isInAnyCollection = productId != null &&
+    final isInAnyCollection =
+        productId != null &&
         productId.trim().isNotEmpty &&
         collectionState.collections.any(
-            (c) => c.productIds.contains(productId));
+          (c) => c.productIds.contains(productId),
+        );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -82,12 +84,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           IconButton(
             onPressed: _showCollectionPicker,
             icon: Icon(
-              isInAnyCollection
-                  ? Icons.bookmark
-                  : Icons.bookmark_border,
-              color: isInAnyCollection
-                  ? AppColors.primary
-                  : AppColors.primary,
+              isInAnyCollection ? Icons.bookmark : Icons.bookmark_border,
+              color: isInAnyCollection ? AppColors.primary : AppColors.primary,
             ),
           ),
           const SizedBox(width: 8),
@@ -383,10 +381,7 @@ class _CollectionPickerSheetState
               const SizedBox(height: 4),
               const Text(
                 "Choose a collection or create a new one",
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
               ),
               const SizedBox(height: 16),
 
@@ -485,8 +480,7 @@ class _CollectionPickerSheetState
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
               ),
-              child: const Text("Retry",
-                  style: TextStyle(color: Colors.white)),
+              child: const Text("Retry", style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -498,15 +492,15 @@ class _CollectionPickerSheetState
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.collections_bookmark_outlined,
-                size: 48, color: AppColors.grey),
+            const Icon(
+              Icons.collections_bookmark_outlined,
+              size: 48,
+              color: AppColors.grey,
+            ),
             const SizedBox(height: 12),
             const Text(
               "No collections yet",
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
             ),
             const SizedBox(height: 4),
             const Text(
@@ -530,12 +524,7 @@ class _CollectionPickerSheetState
         final collection = collections[index];
         final alreadyContains = collection.productIds.contains(productIdStr);
 
-        return _buildCollectionTile(
-          context,
-          ref,
-          collection,
-          alreadyContains,
-        );
+        return _buildCollectionTile(context, ref, collection, alreadyContains);
       },
     );
   }
@@ -558,31 +547,30 @@ class _CollectionPickerSheetState
         onTap: isLoading
             ? null
             : alreadyContains
-                ? () => _confirmRemove(context, ref, collection)
-                : () async {
-                    setState(() => _addingCollectionIds.add(collectionId));
-                    await ref
-                        .read(collectionViewModelProvider.notifier)
-                        .addProductToCollection(
-                            collectionId, widget.productId);
-                    setState(
-                        () => _addingCollectionIds.remove(collectionId));
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            "Added to \"${collection.collectionName}\"",
-                          ),
-                          backgroundColor: AppColors.primary,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      );
-                    }
-                  },
+            ? () => _confirmRemove(context, ref, collection)
+            : () async {
+                setState(() => _addingCollectionIds.add(collectionId));
+                await ref
+                    .read(collectionViewModelProvider.notifier)
+                    .addProductToCollection(collectionId, widget.productId);
+                setState(() => _addingCollectionIds.remove(collectionId));
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        "Added to \"${collection.collectionName}\"",
+                      ),
+                      backgroundColor: AppColors.primary,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  );
+                }
+              },
+        onDoubleTap: () => _showRenameDialog(context, ref, collection),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
@@ -608,9 +596,7 @@ class _CollectionPickerSheetState
                   alreadyContains
                       ? Icons.bookmark_remove_outlined
                       : Icons.folder_outlined,
-                  color: alreadyContains
-                      ? AppColors.error
-                      : AppColors.primary,
+                  color: alreadyContains ? AppColors.error : AppColors.primary,
                 ),
               ),
               const SizedBox(width: 14),
@@ -714,11 +700,12 @@ class _CollectionPickerSheetState
                         await ref
                             .read(collectionViewModelProvider.notifier)
                             .removeProductFromCollection(
-                                collection.collectionId ?? '',
-                                widget.productId,
+                              collection.collectionId ?? '',
+                              widget.productId,
                             );
                         if (ctx.mounted) {
                           Navigator.pop(ctx);
+                          Navigator.pop(context); 
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
@@ -773,40 +760,29 @@ class _CollectionPickerSheetState
               isCreating ? "Creating..." : "New Collection",
               style: const TextStyle(color: AppColors.textPrimary),
             ),
-            content: isCreating
-                ? const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  )
-                : TextField(
-                    controller: controller,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      hintText: "Collection name",
-                      hintStyle: const TextStyle(
-                          color: AppColors.textSecondary),
-                      filled: true,
-                      fillColor: AppColors.inputFill,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                    style: const TextStyle(
-                        color: AppColors.textPrimary),
-                  ),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              enabled: !isCreating,
+              decoration: InputDecoration(
+                hintText: "Collection name",
+                hintStyle: const TextStyle(color: AppColors.textSecondary),
+                filled: true,
+                fillColor: AppColors.inputFill,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              style: const TextStyle(color: AppColors.textPrimary),
+            ),
             actions: [
               if (!isCreating)
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
                   child: const Text(
                     "Cancel",
-                    style: TextStyle(
-                        color: AppColors.textSecondary),
+                    style: TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
               TextButton(
@@ -823,14 +799,11 @@ class _CollectionPickerSheetState
                             Navigator.pop(ctx);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(
-                                  'Collection "$name" created!',
-                                ),
+                                content: Text('Collection "$name" created!'),
                                 backgroundColor: AppColors.primary,
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                               ),
                             );
@@ -848,6 +821,107 @@ class _CollectionPickerSheetState
                       )
                     : const Text(
                         "Create",
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showRenameDialog(
+    BuildContext context,
+    WidgetRef ref,
+    CollectionEntity collection,
+  ) {
+    final controller = TextEditingController(text: collection.collectionName);
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        var isUpdating = false;
+        return StatefulBuilder(
+          builder: (_, setDialogState) => AlertDialog(
+            backgroundColor: AppColors.card,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              isUpdating ? "Updating..." : "Rename Collection",
+              style: const TextStyle(color: AppColors.textPrimary),
+            ),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              enabled: !isUpdating,
+              decoration: InputDecoration(
+                hintText: "New collection name",
+                hintStyle: const TextStyle(color: AppColors.textSecondary),
+                filled: true,
+                fillColor: AppColors.inputFill,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              style: const TextStyle(color: AppColors.textPrimary),
+            ),
+            actions: [
+              if (!isUpdating)
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
+              TextButton(
+                onPressed: isUpdating
+                    ? null
+                    : () async {
+                        final newName = controller.text.trim();
+                        if (newName.isNotEmpty &&
+                            newName != collection.collectionName) {
+                          setDialogState(() => isUpdating = true);
+                          await ref
+                              .read(collectionViewModelProvider.notifier)
+                              .updateCollectionName(
+                                collection.collectionId ?? '',
+                                newName,
+                              );
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Renamed to "$newName"'),
+                                backgroundColor: AppColors.primary,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            );
+                          }
+                        } else if (newName == collection.collectionName) {
+                          Navigator.pop(ctx);
+                        }
+                      },
+                child: isUpdating
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primary,
+                        ),
+                      )
+                    : const Text(
+                        "Rename",
                         style: TextStyle(
                           color: AppColors.primary,
                           fontWeight: FontWeight.bold,

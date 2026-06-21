@@ -50,4 +50,12 @@ class ApiEndpoints {
   //=============== Product Endpoints ============
   static const String getAllProduct = "/product/";
   static const String getProductById = "/product/:id";
+
+  //=============== Collection Endpoints ============
+  static const String getMyCollections = "/collection/my";
+  static const String getCollectionById = "/collection/:id";
+  static const String createCollection = "/collection/add-collection";
+  static const String deleteCollection = "/collection/:id";
+  static const String addProductToCollection = "/collection/:id/add-product";
+  static const String removeProductFromCollection = "/collection/:id/remove-product";
 }

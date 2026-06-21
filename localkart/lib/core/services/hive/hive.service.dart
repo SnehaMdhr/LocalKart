@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:localkart/core/constants/hive_table_constants.dart';
 import 'package:localkart/feature/auth/data/models/auth_hive_model.dart';
+import 'package:localkart/feature/collection/data/models/collection_hive_model.dart';
 import 'package:localkart/feature/product/data/models/product_hive_model.dart';
 import 'package:localkart/feature/vendor_registeration/data/models/shop_hive_model.dart';
 import 'package:path_provider/path_provider.dart';
@@ -32,6 +33,10 @@ class HiveService {
     if(!Hive.isAdapterRegistered(HiveTableConstant.productTypeId)){
       Hive.registerAdapter(ProductHiveModelAdapter());
     }
+
+    if(!Hive.isAdapterRegistered(HiveTableConstant.collectionTypeId)){
+      Hive.registerAdapter(CollectionHiveModelAdapter());
+    }
   }
   //Open boxes
   Future<void> openBoxes() async{
@@ -44,6 +49,13 @@ class HiveService {
     } catch (e) {
       await Hive.deleteBoxFromDisk(HiveTableConstant.productTable);
       await Hive.openBox<ProductHiveModel>(HiveTableConstant.productTable);
+    }
+
+    try {
+      await Hive.openBox<CollectionHiveModel>(HiveTableConstant.collectionTable);
+    } catch (e) {
+      await Hive.deleteBoxFromDisk(HiveTableConstant.collectionTable);
+      await Hive.openBox<CollectionHiveModel>(HiveTableConstant.collectionTable);
     }
   }
   //close boxes
@@ -95,6 +107,30 @@ class HiveService {
     return model;
   }
 
+
+  // ======== Collection Queries ===============
+  Box<CollectionHiveModel> get _collectionBox {
+    if (!Hive.isBoxOpen(HiveTableConstant.collectionTable)) {
+      throw Exception(
+          'Hive box ${HiveTableConstant.collectionTable} is not open');
+    }
+    return Hive.box<CollectionHiveModel>(HiveTableConstant.collectionTable);
+  }
+
+  Future<List<CollectionHiveModel>> getAllCollections() async {
+    return _collectionBox.values.toList();
+  }
+
+  Future<CollectionHiveModel?> getCollectionById(String collectionId) async {
+    return _collectionBox.get(collectionId);
+  }
+
+  Future<void> cacheCollections(List<CollectionHiveModel> collections) async {
+    await _collectionBox.clear();
+    for (var collection in collections) {
+      await _collectionBox.put(collection.collectionId, collection);
+    }
+  }
 
   // ======== Product Queries ===============
   Box<ProductHiveModel> get _productBox{

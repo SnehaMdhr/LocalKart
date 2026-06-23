@@ -59,4 +59,11 @@ class ApiEndpoints {
   static const String addProductToCollection = "/collection/:id/add-product";
   static const String removeProductFromCollection = "/collection/:id/remove-product";
   static const String updateCollection = "/collection/:id";
+
+  //=============== Cart Endpoints ============
+  static const String addToCart = "/cart/add";
+  static const String getCart = "/cart/";
+  static const String updateCartQuantity = "/cart/update";
+  static const String removeFromCart = "/cart/remove/";
+  static const String clearCart = "/cart/clear";
 }

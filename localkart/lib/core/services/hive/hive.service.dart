@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:localkart/core/constants/hive_table_constants.dart';
 import 'package:localkart/feature/auth/data/models/auth_hive_model.dart';
+import 'package:localkart/feature/cart/data/models/cart_hive_model.dart';
 import 'package:localkart/feature/collection/data/models/collection_hive_model.dart';
 import 'package:localkart/feature/product/data/models/product_hive_model.dart';
 import 'package:localkart/feature/vendor_registeration/data/models/shop_hive_model.dart';
@@ -37,6 +38,11 @@ class HiveService {
     if(!Hive.isAdapterRegistered(HiveTableConstant.collectionTypeId)){
       Hive.registerAdapter(CollectionHiveModelAdapter());
     }
+
+    if(!Hive.isAdapterRegistered(HiveTableConstant.cartTypeId)){
+      Hive.registerAdapter(CartHiveModelAdapter());
+      Hive.registerAdapter(CartItemHiveModelAdapter());
+    }
   }
   //Open boxes
   Future<void> openBoxes() async{
@@ -56,6 +62,13 @@ class HiveService {
     } catch (e) {
       await Hive.deleteBoxFromDisk(HiveTableConstant.collectionTable);
       await Hive.openBox<CollectionHiveModel>(HiveTableConstant.collectionTable);
+    }
+
+    try {
+      await Hive.openBox<CartHiveModel>(HiveTableConstant.cartTable);
+    } catch (e) {
+      await Hive.deleteBoxFromDisk(HiveTableConstant.cartTable);
+      await Hive.openBox<CartHiveModel>(HiveTableConstant.cartTable);
     }
   }
   //close boxes
@@ -153,6 +166,31 @@ class HiveService {
     for (var product in products) {
       await _productBox.put(product.productId, product);
     }
+  }
+
+  // ======== Cart Queries ===============
+  Box<CartHiveModel> get _cartBox {
+    if (!Hive.isBoxOpen(HiveTableConstant.cartTable)) {
+      throw Exception('Hive box ${HiveTableConstant.cartTable} is not open');
+    }
+    return Hive.box<CartHiveModel>(HiveTableConstant.cartTable);
+  }
+
+  Future<CartHiveModel?> getCart() async {
+    final carts = _cartBox.values.toList();
+    if (carts.isEmpty) return null;
+    return carts.first;
+  }
+
+  Future<void> cacheCart(CartHiveModel? cart) async {
+    await _cartBox.clear();
+    if (cart != null) {
+      await _cartBox.put(cart.cartId, cart);
+    }
+  }
+
+  Future<void> clearCartLocally() async {
+    await _cartBox.clear();
   }
 }
 

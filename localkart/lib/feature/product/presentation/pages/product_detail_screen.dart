@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
+import 'package:localkart/feature/cart/presentation/view_model/cart_view_model.dart';
 import 'package:localkart/feature/collection/domain/entities/collection_entity.dart';
 import 'package:localkart/feature/collection/presentation/states/collection_state.dart';
 import 'package:localkart/feature/collection/presentation/view_model/collection_view_model.dart';
@@ -18,6 +19,9 @@ class ProductDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
+  int _quantity = 1;
+  bool _isAddingToCart = false;
+
   @override
   void initState() {
     super.initState();
@@ -25,6 +29,75 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     Future.microtask(() {
       ref.read(collectionViewModelProvider.notifier).getAllCollections();
     });
+  }
+
+  void _decrementQuantity() {
+    if (_quantity > 1) {
+      setState(() => _quantity--);
+    }
+  }
+
+  void _incrementQuantity() {
+    setState(() => _quantity++);
+  }
+
+  Future<void> _addToCart() async {
+    final productId = widget.product.productId;
+    if (productId == null || productId.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Product ID is not available"),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isAddingToCart = true);
+
+    final success = await ref.read(cartViewModelProvider.notifier).addToCart(
+          productId: productId,
+          quantity: _quantity,
+          productName: widget.product.productName,
+          price: widget.product.price,
+          imageUrl: widget.product.imageUrl,
+        );
+
+    setState(() => _isAddingToCart = false);
+
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Added $_quantity ${widget.product.unit} of ${widget.product.productName} to cart",
+            ),
+            backgroundColor: AppColors.primary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        // Reset quantity after successful add
+        setState(() => _quantity = 1);
+      } else {
+        final cartState = ref.read(cartViewModelProvider);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              cartState.errorMessage ?? "Failed to add to cart. Please try again.",
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    }
   }
 
   void _showCollectionPicker() {
@@ -52,8 +125,16 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cartState = ref.watch(cartViewModelProvider);
     final collectionState = ref.watch(collectionViewModelProvider);
     final productId = widget.product.productId;
+
+    // Check if this product is already in the cart
+    final cartItem = cartState.cart.items.where(
+      (item) => item.productId == productId,
+    );
+    final isInCart = cartItem.isNotEmpty;
+    final cartQuantity = isInCart ? cartItem.first.quantity : 0;
 
     // Check if this product exists in any collection
     final isInAnyCollection =
@@ -111,14 +192,17 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      onPressed: () {},
+                      onPressed: _decrementQuantity,
                       icon: const Icon(Icons.remove),
                     ),
-                    const Text(
-                      "1",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    Text(
+                      "$_quantity",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    IconButton(onPressed: () {}, icon: const Icon(Icons.add)),
+                    IconButton(
+                      onPressed: _incrementQuantity,
+                      icon: const Icon(Icons.add),
+                    ),
                   ],
                 ),
               ),
@@ -129,20 +213,32 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 child: SizedBox(
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed:
+                        _isAddingToCart ? null : _addToCart,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      "Add to Cart",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: _isAddingToCart
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            isInCart
+                                ? "Add ${_quantity > 0 ? "$_quantity more " : ""}to Cart"
+                                : "Add to Cart",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -229,6 +325,41 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   ),
 
                   const SizedBox(height: 28),
+
+                  /// In-cart indicator
+                  if (isInCart)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryExtraLight,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.shopping_cart,
+                            size: 20,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            "$cartQuantity item${cartQuantity == 1 ? '' : 's'} in cart",
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
                   const Text(
                     "About the Product",
@@ -705,7 +836,7 @@ class _CollectionPickerSheetState
                             );
                         if (ctx.mounted) {
                           Navigator.pop(ctx);
-                          Navigator.pop(context); 
+                          Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(

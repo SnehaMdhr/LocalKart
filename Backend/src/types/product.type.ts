@@ -20,6 +20,8 @@ export const productSchema = z.object({
 
   imageUrl: z.string().optional(),
 
+  price: z.number().positive(),
+
   unit: z.string(), // kg, litre, packet, piece
 
   isActive: z.boolean().optional(),

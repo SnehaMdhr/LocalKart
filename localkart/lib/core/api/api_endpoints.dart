@@ -45,4 +45,25 @@ class ApiEndpoints {
   static const String registerShop = "/shop/register-shop";
   static const String myShop = "/shop/my-shop";
   static String updateShop = "/shop/update-shop";
+
+
+  //=============== Product Endpoints ============
+  static const String getAllProduct = "/product/";
+  static const String getProductById = "/product/:id";
+
+  //=============== Collection Endpoints ============
+  static const String getMyCollections = "/collection/my";
+  static const String getCollectionById = "/collection/:id";
+  static const String createCollection = "/collection/add-collection";
+  static const String deleteCollection = "/collection/:id";
+  static const String addProductToCollection = "/collection/:id/add-product";
+  static const String removeProductFromCollection = "/collection/:id/remove-product";
+  static const String updateCollection = "/collection/:id";
+
+  //=============== Cart Endpoints ============
+  static const String addToCart = "/cart/add";
+  static const String getCart = "/cart/";
+  static const String updateCartQuantity = "/cart/update";
+  static const String removeFromCart = "/cart/remove/";
+  static const String clearCart = "/cart/clear";
 }

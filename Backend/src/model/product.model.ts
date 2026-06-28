@@ -36,6 +36,11 @@ const productSchema = new Schema<IProduct>(
       ],
     },
 
+    price:{
+      type: Number,
+      required: true,
+      min: 0.01,
+    },
     imageUrl: {
       type: String,
       required: false,

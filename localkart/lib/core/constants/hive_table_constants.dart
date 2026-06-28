@@ -8,4 +8,13 @@ class HiveTableConstant {
 
   static const int shopTypeId = 1;
   static const String shopTable = "shop_table";
+
+  static const int productTypeId = 2;
+  static const String productTable = "product_table";
+
+  static const int collectionTypeId = 3;
+  static const String collectionTable = "collection_table";
+
+  static const int cartTypeId = 4;
+  static const String cartTable = "cart_table";
 }

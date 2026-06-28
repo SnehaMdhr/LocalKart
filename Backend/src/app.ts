@@ -6,6 +6,8 @@ import path from "path";
 import userRoutes from './routes/user.routes';
 import shopRoutes from "./routes/shop.routes";
 import productRoutes from './routes/product.routes';
+import collectionRoutes from './routes/collection.routes';
+import cartRoutes from './routes/cart.routes';
 
 dotenv.config();
 // can use .env variable below this
@@ -27,6 +29,8 @@ app.use(bodyParser.json());
 app.use("/api/auth", userRoutes);
 app.use("/api/shop", shopRoutes);
 app.use("/api/product", productRoutes);
+app.use("/api/collection", collectionRoutes);
+app.use("/api/cart", cartRoutes);
 
 app.get('/', (req: Request, res: Response) => {
     res.send('Hello, World!');

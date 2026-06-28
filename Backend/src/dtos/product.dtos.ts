@@ -6,6 +6,7 @@ export const CreateProductDto = productSchema.pick({
     description: true,
     categoryName: true,
     unit: true,
+    price: true,
 }).extend({
     imageUrl: z.string().optional(),
 })

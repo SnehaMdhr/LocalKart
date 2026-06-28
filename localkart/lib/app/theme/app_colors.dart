@@ -41,4 +41,20 @@ static const Color logoutText = Color(0xFFE53935);
 
 // Dialog Colors
 static const Color dialogTitle = Color(0xFF102027);
+
+// Category Colors
+  static const Color categoryFruit = Color(0xFFFFE5DE);
+  static const Color categoryVegetable = Color(0xFFE3F5E8);
+  static const Color categoryDairy = Color(0xFFFFF4D6);
+  static const Color categoryGrains = Color(0xFFEDE3FF);
+  static const Color categoryPulses = Color(0xFFFFEFD9);
+  static const Color categoryOil = Color(0xFFDDF8FF);
+  static const Color categorySpices = Color(0xFFFFE6CC);
+  static const Color categoryTea = Color(0xFFE8EAF6);
+  static const Color categorySnacks = Color(0xFFFFE0F1);
+  static const Color categoryBakery = Color(0xFFFFF3E0);
+  static const Color categoryFrozen = Color(0xFFE1F5FE);
+  static const Color categoryPersonal = Color(0xFFF3E5F5);
+  static const Color categoryHousehold = Color(0xFFE8F5E9);
+  static const Color categoryBaby = Color(0xFFFFF8E1);
 }

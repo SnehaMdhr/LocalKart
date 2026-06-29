@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:localkart/app/theme/app_colors.dart';
+import 'package:localkart/feature/cart/presentation/pages/cart_detail_screen.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -51,7 +52,7 @@ class CartScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _cartSummary(),
+            _cartSummary(context),
 
             const SizedBox(height: 28),
 
@@ -88,8 +89,18 @@ class CartScreen extends StatelessWidget {
     );
   }
 
-  Widget _cartSummary() {
-    return Container(
+  Widget _cartSummary(BuildContext context) {
+  return InkWell(
+    borderRadius: BorderRadius.circular(18),
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const CartDetailScreen(),
+        ),
+      );
+    },
+    child: Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.primary,
@@ -140,9 +151,9 @@ class CartScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
+    ),
+  );
+}
   Widget _sectionHeader(String title, String action) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,

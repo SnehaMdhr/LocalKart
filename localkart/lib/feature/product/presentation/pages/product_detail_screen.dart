@@ -180,70 +180,9 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             color: Colors.white,
             boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)],
           ),
-          child: Row(
-            children: [
-              /// Quantity Selector
-              Container(
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: _decrementQuantity,
-                      icon: const Icon(Icons.remove),
-                    ),
-                    Text(
-                      "$_quantity",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    IconButton(
-                      onPressed: _incrementQuantity,
-                      icon: const Icon(Icons.add),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 16),
-
-              Expanded(
-                child: SizedBox(
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed:
-                        _isAddingToCart ? null : _addToCart,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: _isAddingToCart
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : Text(
-                            isInCart
-                                ? "Add ${_quantity > 0 ? "$_quantity more " : ""}to Cart"
-                                : "Add to Cart",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          child: isInCart
+              ? _buildCartQuantityUpdater(cartQuantity)
+              : _buildAddToCartBar(),
         ),
       ),
 
@@ -384,6 +323,170 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Bottom bar shown when product is NOT in cart: quantity selector + Add to Cart button
+  Widget _buildAddToCartBar() {
+    return Row(
+      children: [
+        /// Quantity Selector
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              IconButton(
+                onPressed: _decrementQuantity,
+                icon: const Icon(Icons.remove),
+              ),
+              Text(
+                "$_quantity",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                onPressed: _incrementQuantity,
+                icon: const Icon(Icons.add),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(width: 16),
+
+        Expanded(
+          child: SizedBox(
+            height: 50,
+            child: ElevatedButton(
+              onPressed:
+                  _isAddingToCart ? null : _addToCart,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: _isAddingToCart
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      "Add to Cart",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Bottom bar shown when product IS already in cart: inline +/- to update quantity
+  Widget _buildCartQuantityUpdater(int cartQuantity) {
+    final cartState = ref.watch(cartViewModelProvider);
+    final isUpdating = cartState.isUpdating;
+    final productId = widget.product.productId ?? '';
+
+    return Row(
+      children: [
+        /// "In Cart" label
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          height: 48,
+          decoration: BoxDecoration(
+            color: AppColors.primaryExtraLight,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.check_circle, size: 18, color: AppColors.primary),
+              SizedBox(width: 6),
+              Text(
+                "In Cart",
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(width: 12),
+
+        /// Quantity updater: - [Qty] +
+        Expanded(
+          child: Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: isUpdating
+                      ? null
+                      : () async {
+                          if (cartQuantity <= 1) {
+                            await ref
+                                .read(cartViewModelProvider.notifier)
+                                .removeFromCart(productId);
+                          } else {
+                            await ref
+                                .read(cartViewModelProvider.notifier)
+                                .updateQuantity(
+                                  productId: productId,
+                                  quantity: cartQuantity - 1,
+                                );
+                          }
+                        },
+                  icon: isUpdating
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.primary,
+                          ),
+                        )
+                      : const Icon(Icons.remove),
+                ),
+                Text(
+                  "$cartQuantity",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  onPressed: isUpdating
+                      ? null
+                      : () async {
+                          await ref
+                              .read(cartViewModelProvider.notifier)
+                              .updateQuantity(
+                                productId: productId,
+                                quantity: cartQuantity + 1,
+                              );
+                        },
+                  icon: const Icon(Icons.add),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 

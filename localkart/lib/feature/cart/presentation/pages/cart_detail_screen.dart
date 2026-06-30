@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
+import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/feature/cart/domain/entities/cart_entity.dart';
 import 'package:localkart/feature/cart/presentation/states/cart_state.dart';
 import 'package:localkart/feature/cart/presentation/view_model/cart_view_model.dart';
@@ -143,7 +144,10 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text("Retry", style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  "Retry",
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -276,10 +280,7 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
                 children: [
                   const Text(
                     "Total Amount",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                   Text(
                     "Rs.$subtotal",
@@ -300,22 +301,13 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
           child: SizedBox(
             width: double.infinity,
             height: 58,
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                "Proceed to Checkout",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
+            child: CustomButton(
+              text: "Proceed to Checkout",
+              onPressed: () {
+                // Checkout logic
+              },
+              height: 56,
+              borderRadius: 12,
             ),
           ),
         ),
@@ -327,8 +319,8 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
     final imageUrl = item.imageUrl;
     final fullUrl = (imageUrl != null && imageUrl.trim().isNotEmpty)
         ? (imageUrl.startsWith('http')
-            ? imageUrl
-            : '${ApiEndpoints.mediaServerUrl}${imageUrl.startsWith('/') ? '' : '/'}$imageUrl')
+              ? imageUrl
+              : '${ApiEndpoints.mediaServerUrl}${imageUrl.startsWith('/') ? '' : '/'}$imageUrl')
         : null;
 
     return Row(
@@ -510,19 +502,11 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
   }) {
     return Row(
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
-          ),
-        ),
+        Text(title, style: const TextStyle(color: AppColors.textSecondary)),
         const Spacer(),
         Text(
           value,
-          style: TextStyle(
-            color: valueColor,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: valueColor, fontWeight: FontWeight.bold),
         ),
       ],
     );

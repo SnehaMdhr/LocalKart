@@ -23,6 +23,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   int _quantity = 1;
   bool _isAddingToCart = false;
   bool _isRemovingFromCart = false;
+  bool _isUpdatingQuantity = false;
 
   @override
   void initState() {
@@ -211,7 +212,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)],
           ),
           child: isInCart
-              ? _buildRemoveFromCartBar()
+              ? _buildRemoveFromCartBar(cartQuantity)
               : _buildAddToCartBar(),
         ),
       ),
@@ -422,38 +423,102 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     );
   }
 
-  /// Bottom bar shown when product IS already in cart: red "Remove from Cart" button
-  Widget _buildRemoveFromCartBar() {
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: ElevatedButton.icon(
-        onPressed: _isRemovingFromCart ? null : _removeFromCart,
-        icon: _isRemovingFromCart
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              )
-            : const Icon(Icons.remove_shopping_cart_outlined),
-        label: Text(
-          _isRemovingFromCart ? "Removing..." : "Remove from Cart",
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.error,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
+  Future<void> _decrementCartQuantity(int currentQuantity) async {
+    final productId = widget.product.productId;
+    if (productId == null || productId.trim().isEmpty) return;
+
+    if (currentQuantity <= 1) {
+      await _removeFromCart();
+      return;
+    }
+
+    setState(() => _isUpdatingQuantity = true);
+    await ref.read(cartViewModelProvider.notifier).updateQuantity(
+      productId,
+      currentQuantity - 1,
+    );
+    setState(() => _isUpdatingQuantity = false);
+  }
+
+  Future<void> _incrementCartQuantity(int currentQuantity) async {
+    final productId = widget.product.productId;
+    if (productId == null || productId.trim().isEmpty) return;
+
+    setState(() => _isUpdatingQuantity = true);
+    await ref.read(cartViewModelProvider.notifier).updateQuantity(
+      productId,
+      currentQuantity + 1,
+    );
+    setState(() => _isUpdatingQuantity = false);
+  }
+
+  /// Bottom bar shown when product IS already in cart: quantity selector + Remove button
+  Widget _buildRemoveFromCartBar(int cartQuantity) {
+    return Row(
+      children: [
+        /// Quantity Selector
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
             borderRadius: BorderRadius.circular(12),
           ),
+          child: Row(
+            children: [
+              IconButton(
+                onPressed: _isUpdatingQuantity
+                    ? null
+                    : () => _decrementCartQuantity(cartQuantity),
+                icon: const Icon(Icons.remove),
+              ),
+              Text(
+                "$cartQuantity",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                onPressed: _isUpdatingQuantity
+                    ? null
+                    : () => _incrementCartQuantity(cartQuantity),
+                icon: const Icon(Icons.add),
+              ),
+            ],
+          ),
         ),
-      ),
+
+        const SizedBox(width: 12),
+
+        Expanded(
+          child: SizedBox(
+            height: 50,
+            child: ElevatedButton(
+              onPressed: _isRemovingFromCart ? null : _removeFromCart,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: _isRemovingFromCart
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text(
+                      "Remove",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

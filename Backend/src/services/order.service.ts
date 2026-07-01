@@ -83,15 +83,35 @@ export class OrderService {
       }
     }
 
-    // Shopkeepers can only view orders assigned to their shop
+    // Shopkeepers can view orders assigned to their shop OR
+    // unassigned pending orders (that they haven't rejected)
     if (userRole === "Shopkeeper") {
       const shop = await shopRepository.getShopByUserId(userId);
       if (!shop) {
         throw new HttpError(403, "Forbidden: No shop associated with your account");
       }
-      if (!order.shopId || (order.shopId._id ? order.shopId._id.toString() !== shop._id.toString() : order.shopId.toString() !== shop._id.toString())) {
-        throw new HttpError(403, "Forbidden: This order is not assigned to your shop");
+
+      const orderShopId = order.shopId
+        ? (order.shopId._id ? order.shopId._id.toString() : order.shopId.toString())
+        : null;
+
+      // Allow if the order is assigned to this shop
+      if (orderShopId === shop._id.toString()) {
+        return order;
       }
+
+      // Allow if the order is unassigned and pending (not rejected by this shop)
+      if (order.status === "Pending" && !order.shopId) {
+        const rejectedBy = order.rejectedBy || [];
+        const rejectedByIds = rejectedBy.map((r: any) =>
+          r._id ? r._id.toString() : r.toString()
+        );
+        if (!rejectedByIds.includes(shop._id.toString())) {
+          return order;
+        }
+      }
+
+      throw new HttpError(403, "Forbidden: You cannot view this order");
     }
 
     return order;
@@ -168,16 +188,31 @@ export class OrderService {
       throw new HttpError(403, "Forbidden: No shop associated with your account");
     }
 
-    const order = await orderRepository.updateOrder(orderId, {
-      shopId: shop._id,
-      status: "Rejected",
-    });
+    // Instead of assigning the order to this shop and marking Rejected,
+    // just add this shop to the rejectedBy array so the order remains
+    // available for other shopkeepers to accept.
+    const order = await orderRepository.addRejectedBy(
+      orderId,
+      shop._id
+    );
 
     if (!order) {
       throw new HttpError(404, "Order not found");
     }
 
     return order;
+  }
+
+  async getShopOrders(userId: string): Promise<IOrder[]> {
+    const shop = await shopRepository.getShopByUserId(userId);
+
+    if (!shop) {
+      throw new HttpError(403, "Forbidden: No shop associated with your account");
+    }
+
+    // Return both orders assigned to this shop AND unassigned pending
+    // orders that this shop hasn't rejected yet
+    return orderRepository.getOrdersForShop(shop._id.toString());
   }
 
   async deleteOrder(orderId: string): Promise<void> {

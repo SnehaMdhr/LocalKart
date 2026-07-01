@@ -10,6 +10,13 @@ export interface IOrderRepository {
 
   getOrdersByShopId(shopId: string): Promise<IOrder[]>;
 
+  getOrdersForShop(shopId: string): Promise<IOrder[]>;
+
+  addRejectedBy(
+    id: string,
+    shopId: Types.ObjectId,
+  ): Promise<IOrder | null>;
+
   getAllOrders(): Promise<IOrder[]>;
 
   updateOrder(
@@ -51,6 +58,45 @@ export class OrderRepository implements IOrderRepository {
     return OrderModel.find({
       shopId: new Types.ObjectId(shopId),
     })
+      .populate("customerId")
+      .populate("shopId")
+      .populate("items.productId");
+  }
+
+  async getOrdersForShop(shopId: string): Promise<IOrder[]> {
+    const shopObjectId = new Types.ObjectId(shopId);
+
+    return OrderModel.find({
+      $or: [
+        // Orders assigned to this shop
+        { shopId: shopObjectId },
+        // Unassigned pending orders that this shop hasn't rejected
+        {
+          shopId: null,
+          status: "Pending",
+          rejectedBy: { $ne: shopObjectId },
+        },
+      ],
+    })
+      .populate("customerId")
+      .populate("shopId")
+      .populate("items.productId")
+      .sort({ createdAt: -1 });
+  }
+
+  async addRejectedBy(
+    id: string,
+    shopId: Types.ObjectId,
+  ): Promise<IOrder | null> {
+    return OrderModel.findByIdAndUpdate(
+      id,
+      {
+        $addToSet: { rejectedBy: shopId },
+      },
+      {
+        new: true,
+      },
+    )
       .populate("customerId")
       .populate("shopId")
       .populate("items.productId");

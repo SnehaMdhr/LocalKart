@@ -32,6 +32,8 @@ export const orderSchema = z.object({
     "Delivered",
     "Cancelled",
   ]),
+
+  rejectedBy: z.array(z.instanceof(mongoose.Types.ObjectId)).optional(),
 });
 
 export type OrderType = z.infer<typeof orderSchema>;

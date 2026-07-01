@@ -133,6 +133,24 @@ export class OrderController {
     }
   }
 
+  async getShopOrders(req: Request, res: Response) {
+    try {
+      const orders = await orderService.getShopOrders(
+        req.user!._id.toString()
+      );
+
+      return res.status(200).json({
+        success: true,
+        data: orders,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode ?? 500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
   async deleteOrder(req: Request, res: Response) {
     try {
       await orderService.deleteOrder(req.params.id as string);

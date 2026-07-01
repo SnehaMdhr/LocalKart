@@ -39,6 +39,14 @@ router.get(
 
 // ───── Vendor-facing order routes ─────
 
+// View shop orders (vendor)
+router.get(
+  "/shop",
+  authorizedMiddleware,
+  shopkeeperOnlyMiddleware,
+  orderController.getShopOrders
+);
+
 // Accept an order (assign to shop & mark as Accepted)
 router.patch(
   "/:id/accept",

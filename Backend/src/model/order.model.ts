@@ -70,6 +70,13 @@ const orderSchema = new Schema(
       ],
       default: "Pending",
     },
+
+    rejectedBy: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Shop",
+      },
+    ],
   },
   {
     timestamps: true,

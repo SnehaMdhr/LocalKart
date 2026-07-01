@@ -66,4 +66,14 @@ class ApiEndpoints {
   static const String updateCartQuantity = "/cart/update";
   static const String removeFromCart = "/cart/remove/";
   static const String clearCart = "/cart/clear";
+
+  //=============== Order Endpoints ============
+  static const String createOrder = "/order/";
+  static const String getMyOrders = "/order/";
+  static const String getShopOrders = "/order/shop";
+  static const String getOrderById = "/order/";
+  static const String acceptOrder = "/order/";
+  static const String rejectOrder = "/order/";
+  static const String updateOrderStatus = "/order/";
+  static const String deleteOrder = "/order/";
 }

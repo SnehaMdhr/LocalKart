@@ -40,6 +40,7 @@ class ApiEndpoints {
   static String userById(String id) => '/auth/$id';
   static String userPhoto(String id) => '/auth/$id/photo';
   static String updateProfile = "/auth/update-profile";
+  static String changePassword = "/auth/change-password";
 
   // ============ Shop Endpoints ============
   static const String registerShop = "/shop/register-shop";

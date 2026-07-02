@@ -10,6 +10,7 @@ import 'package:localkart/core/widgets/custom_icon_button.dart';
 import 'package:localkart/core/widgets/custom_outlined_button.dart';
 import 'package:localkart/feature/auth/presentation/pages/login_screen.dart';
 import 'package:localkart/feature/auth/presentation/view_model/auth_view_model.dart';
+import 'package:localkart/feature/profile/presentation/pages/change_password_screen.dart';
 import 'package:localkart/feature/profile/presentation/pages/edit_profile_screen.dart';
 import 'package:localkart/feature/profile/presentation/pages/privacy_policy-screen.dart';
 import 'package:localkart/feature/profile/presentation/pages/terms_and_conditions_screen.dart';
@@ -218,9 +219,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             const SizedBox(height: 10),
             _profileTile(
+              icon: Icons.lock_outline_rounded,
+              title: "Change Password",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ChangePasswordScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            _profileTile(
               icon: Icons.location_on_outlined,
               title: "My Addresses",
-              onTap: () {},
+              onTap: () {
+              },
             ),
             const SizedBox(height: 10),
             Container(

@@ -1,3 +1,4 @@
+import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
@@ -6,6 +7,8 @@ import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/feature/cart/domain/entities/cart_entity.dart';
 import 'package:localkart/feature/cart/presentation/states/cart_state.dart';
 import 'package:localkart/feature/cart/presentation/view_model/cart_view_model.dart';
+import 'package:localkart/feature/order/presentation/pages/checkout_screen.dart';
+import 'package:localkart/feature/order/presentation/view_model/order_view_model.dart';
 
 class CartDetailScreen extends ConsumerStatefulWidget {
   const CartDetailScreen({super.key});
@@ -20,6 +23,9 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
     super.initState();
     Future.microtask(() {
       ref.read(cartViewModelProvider.notifier).getCart();
+    });
+    Future.microtask(() {
+      ref.read(orderViewModelProvider.notifier).getMyOrders();
     });
   }
 
@@ -36,6 +42,8 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
     final cart = cartState.cart;
     final items = cart?.items ?? [];
     final subtotal = cart != null ? _calculateSubtotal(cart) : 0;
+    final orderState = ref.watch(orderViewModelProvider);
+    final orders = orderState.orders ?? [];
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -304,7 +312,11 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
             child: CustomButton(
               text: "Proceed to Checkout",
               onPressed: () {
-                // Checkout logic
+                Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CheckoutScreen()),
+          );
               },
               height: 56,
               borderRadius: 12,

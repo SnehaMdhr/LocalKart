@@ -11,6 +11,8 @@ import 'package:localkart/core/widgets/custom_outlined_button.dart';
 import 'package:localkart/feature/auth/presentation/pages/login_screen.dart';
 import 'package:localkart/feature/auth/presentation/view_model/auth_view_model.dart';
 import 'package:localkart/feature/profile/presentation/pages/edit_profile_screen.dart';
+import 'package:localkart/feature/profile/presentation/pages/privacy_policy-screen.dart';
+import 'package:localkart/feature/profile/presentation/pages/terms_and_conditions_screen.dart';
 import 'package:localkart/feature/vendor_registeration/presentation/pages/register_shop_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -287,13 +289,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _profileTile(
               icon: Icons.shield_outlined,
               title: "Privacy Policy",
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const PrivacyPolicyScreen(),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 10),
             _profileTile(
               icon: Icons.gavel_outlined,
               title: "Terms of Service",
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const TermsAndConditionsScreen(),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 35),
             SizedBox(

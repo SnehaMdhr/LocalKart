@@ -8,6 +8,7 @@ import 'package:localkart/core/services/storage/user_session_service.dart';
 import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/core/widgets/custom_icon_button.dart';
 import 'package:localkart/core/widgets/custom_outlined_button.dart';
+import 'package:localkart/feature/address/presentation/pages/address_screen.dart';
 import 'package:localkart/feature/auth/presentation/pages/login_screen.dart';
 import 'package:localkart/feature/auth/presentation/view_model/auth_view_model.dart';
 import 'package:localkart/feature/profile/presentation/pages/change_password_screen.dart';
@@ -235,6 +236,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               icon: Icons.location_on_outlined,
               title: "My Addresses",
               onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AddressScreen(),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 10),

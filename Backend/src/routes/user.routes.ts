@@ -12,6 +12,7 @@ router.post("/login",authController.login)
 router.get("/view-my-profile", authorizedMiddleware, authController.getUserById);
 router.put("/update-profile", authorizedMiddleware,uploads.single("imageUrl"),authController.updateUser);
 router.delete("/delete-profile",authorizedMiddleware, authController.deleteUser);
+router.post("/change-password",authorizedMiddleware,authController.changePassword);
 
 
 router.get("/", authorizedMiddleware, adminOnlyMiddleware, authController.getAllUsers);

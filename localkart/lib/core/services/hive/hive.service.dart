@@ -8,6 +8,7 @@ import 'package:localkart/feature/order/data/models/order_hive_model.dart';
 import 'package:localkart/feature/collection/data/models/collection_hive_model.dart';
 import 'package:localkart/feature/product/data/models/product_hive_model.dart';
 import 'package:localkart/feature/vendor_registeration/data/models/shop_hive_model.dart';
+import 'package:localkart/feature/address/data/models/address_hive_model.dart';
 import 'package:path_provider/path_provider.dart';
 
 final hiveServiceProvider = Provider<HiveService>((ref){
@@ -49,6 +50,10 @@ class HiveService {
       Hive.registerAdapter(OrderHiveModelAdapter());
       Hive.registerAdapter(OrderItemHiveModelAdapter());
     }
+
+    if(!Hive.isAdapterRegistered(HiveTableConstant.addressTypeId)){
+      Hive.registerAdapter(AddressHiveModelAdapter());
+    }
   }
   //Open boxes
   Future<void> openBoxes() async{
@@ -82,6 +87,13 @@ class HiveService {
     } catch (e) {
       await Hive.deleteBoxFromDisk(HiveTableConstant.orderTable);
       await Hive.openBox<OrderHiveModel>(HiveTableConstant.orderTable);
+    }
+
+    try {
+      await Hive.openBox<AddressHiveModel>(HiveTableConstant.addressTable);
+    } catch (e) {
+      await Hive.deleteBoxFromDisk(HiveTableConstant.addressTable);
+      await Hive.openBox<AddressHiveModel>(HiveTableConstant.addressTable);
     }
   }
   //close boxes
@@ -231,6 +243,33 @@ class HiveService {
 
   Future<void> clearOrdersLocally() async {
     await _orderBox.clear();
+  }
+
+  // ======== Address Queries ===============
+  Box<AddressHiveModel> get _addressBox {
+    if (!Hive.isBoxOpen(HiveTableConstant.addressTable)) {
+      throw Exception('Hive box ${HiveTableConstant.addressTable} is not open');
+    }
+    return Hive.box<AddressHiveModel>(HiveTableConstant.addressTable);
+  }
+
+  Future<List<AddressHiveModel>> getAddresses() async {
+    return _addressBox.values.toList();
+  }
+
+  Future<AddressHiveModel?> getAddressById(String addressId) async {
+    return _addressBox.get(addressId);
+  }
+
+  Future<void> cacheAddresses(List<AddressHiveModel> addresses) async {
+    await _addressBox.clear();
+    for (var address in addresses) {
+      await _addressBox.put(address.addressId, address);
+    }
+  }
+
+  Future<void> clearAddressesLocally() async {
+    await _addressBox.clear();
   }
 }
 

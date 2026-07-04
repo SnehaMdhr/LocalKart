@@ -20,12 +20,12 @@ class OrderHiveModelAdapter extends TypeAdapter<OrderHiveModel> {
       orderId: fields[0] as String?,
       customerId: fields[1] as String?,
       shopId: fields[2] as String?,
-      items: (fields[3] as List?)?.cast<OrderItemHiveModel>() ?? [],
-      totalAmount: fields[4] as int? ?? 0,
-      deliveryAddress: (fields[5] as String?) ?? '',
-      paymentMethod: (fields[6] as String?) ?? 'Cash on Delivery',
-      paymentStatus: (fields[7] as String?) ?? 'Pending',
-      status: (fields[8] as String?) ?? 'Pending',
+      items: (fields[3] as List).cast<OrderItemHiveModel>(),
+      totalAmount: (fields[4] as num).toInt(),
+      deliveryAddress: fields[5] as String,
+      paymentMethod: fields[6] as String,
+      paymentStatus: fields[7] as String,
+      status: fields[8] as String,
       createdAt: fields[9] as String?,
       updatedAt: fields[10] as String?,
     );
@@ -83,9 +83,9 @@ class OrderItemHiveModelAdapter extends TypeAdapter<OrderItemHiveModel> {
     return OrderItemHiveModel(
       productId: fields[0] as String,
       productName: fields[1] as String?,
-      price: fields[2] as int?,
+      price: (fields[2] as num?)?.toInt(),
       imageUrl: fields[3] as String?,
-      quantity: fields[4] as int? ?? 1,
+      quantity: (fields[4] as num).toInt(),
     );
   }
 

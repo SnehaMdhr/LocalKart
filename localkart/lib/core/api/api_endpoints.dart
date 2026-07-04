@@ -68,6 +68,13 @@ class ApiEndpoints {
   static const String removeFromCart = "/cart/remove/";
   static const String clearCart = "/cart/clear";
 
+  //=============== Address Endpoints ============
+  static const String createAddress = "/address/";
+  static const String getAddresses = "/address/";
+  static const String getAddressById = "/address/";
+  static const String updateAddress = "/address/";
+  static const String deleteAddress = "/address/";
+
   //=============== Order Endpoints ============
   static const String createOrder = "/order/";
   static const String getMyOrders = "/order/";

@@ -1,4 +1,4 @@
-import mongoose, { Types } from "mongoose";
+import { Types } from "mongoose";
 import { IOrder, OrderModel } from "../model/order.model";
 
 export interface IOrderRepository {
@@ -6,30 +6,29 @@ export interface IOrderRepository {
 
   getOrderById(id: string): Promise<IOrder | null>;
 
-  getOrdersByCustomerId(customerId: string): Promise<IOrder[]>;
+  getOrdersByCustomer(customerId: string): Promise<IOrder[]>;
 
-  getOrdersByShopId(shopId: string): Promise<IOrder[]>;
+  getOrdersByShop(shopId: string): Promise<IOrder[]>;
 
-  getOrdersForShop(shopId: string): Promise<IOrder[]>;
-
-  addRejectedBy(
-    id: string,
-    shopId: Types.ObjectId,
-  ): Promise<IOrder | null>;
-
-  getAllOrders(): Promise<IOrder[]>;
+  getPendingOrders(shopId: string): Promise<IOrder[]>;
 
   updateOrder(
     id: string,
-    updateData: Partial<IOrder>,
-  ): Promise<IOrder | null>;
-
-  updateOrderStatus(
-    id: string,
-    status: string,
+    updateData: Partial<IOrder>
   ): Promise<IOrder | null>;
 
   deleteOrder(id: string): Promise<boolean>;
+
+  acceptOrder(
+    orderId: string,
+    shopId: string,
+    estimatedDeliveryTime?: number
+  ): Promise<IOrder | null>;
+
+  rejectOrder(
+    orderId: string,
+    shopId: string
+  ): Promise<IOrder | null>;
 }
 
 export class OrderRepository implements IOrderRepository {
@@ -45,38 +44,9 @@ export class OrderRepository implements IOrderRepository {
       .populate("items.productId");
   }
 
-  async getOrdersByCustomerId(customerId: string): Promise<IOrder[]> {
+  async getOrdersByCustomer(customerId: string): Promise<IOrder[]> {
     return OrderModel.find({
       customerId: new Types.ObjectId(customerId),
-    })
-      .populate("customerId")
-      .populate("shopId")
-      .populate("items.productId");
-  }
-
-  async getOrdersByShopId(shopId: string): Promise<IOrder[]> {
-    return OrderModel.find({
-      shopId: new Types.ObjectId(shopId),
-    })
-      .populate("customerId")
-      .populate("shopId")
-      .populate("items.productId");
-  }
-
-  async getOrdersForShop(shopId: string): Promise<IOrder[]> {
-    const shopObjectId = new Types.ObjectId(shopId);
-
-    return OrderModel.find({
-      $or: [
-        // Orders assigned to this shop
-        { shopId: shopObjectId },
-        // Unassigned pending orders that this shop hasn't rejected
-        {
-          shopId: null,
-          status: "Pending",
-          rejectedBy: { $ne: shopObjectId },
-        },
-      ],
     })
       .populate("customerId")
       .populate("shopId")
@@ -84,34 +54,32 @@ export class OrderRepository implements IOrderRepository {
       .sort({ createdAt: -1 });
   }
 
-  async addRejectedBy(
-    id: string,
-    shopId: Types.ObjectId,
-  ): Promise<IOrder | null> {
-    return OrderModel.findByIdAndUpdate(
-      id,
-      {
-        $addToSet: { rejectedBy: shopId },
-      },
-      {
-        new: true,
-      },
-    )
+  async getOrdersByShop(shopId: string): Promise<IOrder[]> {
+    return OrderModel.find({
+      shopId: new Types.ObjectId(shopId),
+    })
       .populate("customerId")
       .populate("shopId")
-      .populate("items.productId");
+      .populate("items.productId")
+      .sort({ createdAt: -1 });
   }
 
-  async getAllOrders(): Promise<IOrder[]> {
-    return OrderModel.find()
+  async getPendingOrders(shopId: string): Promise<IOrder[]> {
+    return OrderModel.find({
+      shopId: null,
+      status: "Pending",
+      rejectedBy: {
+        $ne: new Types.ObjectId(shopId),
+      },
+    })
       .populate("customerId")
-      .populate("shopId")
-      .populate("items.productId");
+      .populate("items.productId")
+      .sort({ createdAt: -1 });
   }
 
   async updateOrder(
     id: string,
-    updateData: Partial<IOrder>,
+    updateData: Partial<IOrder>
   ): Promise<IOrder | null> {
     return OrderModel.findByIdAndUpdate(id, updateData, {
       new: true,
@@ -122,26 +90,53 @@ export class OrderRepository implements IOrderRepository {
       .populate("items.productId");
   }
 
-  async updateOrderStatus(
-    id: string,
-    status: string,
+  async deleteOrder(id: string): Promise<boolean> {
+    const result = await OrderModel.findByIdAndDelete(id);
+    return result ? true : false;
+  }
+
+  async acceptOrder(
+    orderId: string,
+    shopId: string,
+    estimatedDeliveryTime?: number
   ): Promise<IOrder | null> {
-    return OrderModel.findByIdAndUpdate(
-      id,
+    return OrderModel.findOneAndUpdate(
       {
-        $set: { status },
+        _id: orderId,
+        shopId: null,
+        status: "Pending",
+      },
+      {
+        shopId: new Types.ObjectId(shopId),
+        status: "Accepted",
+        estimatedDeliveryTime,
       },
       {
         new: true,
-      },
+      }
     )
       .populate("customerId")
       .populate("shopId")
       .populate("items.productId");
   }
 
-  async deleteOrder(id: string): Promise<boolean> {
-    const result = await OrderModel.findByIdAndDelete(id);
-    return result ? true : false;
+  async rejectOrder(
+    orderId: string,
+    shopId: string
+  ): Promise<IOrder | null> {
+    return OrderModel.findByIdAndUpdate(
+      orderId,
+      {
+        $addToSet: {
+          rejectedBy: new Types.ObjectId(shopId),
+        },
+      },
+      {
+        new: true,
+      }
+    )
+      .populate("customerId")
+      .populate("shopId")
+      .populate("items.productId");
   }
 }

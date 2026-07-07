@@ -1,18 +1,16 @@
 import { Router } from "express";
 import { OrderController } from "../controller/order.controller";
 import {
+  adminOnlyMiddleware,
   authorizedMiddleware,
   customerOnlyMiddleware,
   shopkeeperOnlyMiddleware,
-  adminOnlyMiddleware,
 } from "../middlewares/authorized.middleware";
 
 const router = Router();
 const orderController = new OrderController();
 
-// ───── Customer-facing order routes ─────
 
-// Place an order
 router.post(
   "/",
   authorizedMiddleware,
@@ -20,34 +18,33 @@ router.post(
   orderController.createOrder
 );
 
-// View my orders (customer)
 router.get(
-  "/",
+  "/my-orders",
   authorizedMiddleware,
   customerOnlyMiddleware,
-  orderController.getMyOrders
+  orderController.getCustomerOrders
 );
 
-// ───── Shared route (both customers & shopkeepers) ─────
-
-// View single order (authorization enforced in service layer)
 router.get(
   "/:id",
   authorizedMiddleware,
   orderController.getOrderById
 );
 
-// ───── Vendor-facing order routes ─────
-
-// View shop orders (vendor)
 router.get(
-  "/shop",
+  "/shop/pending",
+  authorizedMiddleware,
+  shopkeeperOnlyMiddleware,
+  orderController.getPendingOrders
+);
+
+router.get(
+  "/shop/orders",
   authorizedMiddleware,
   shopkeeperOnlyMiddleware,
   orderController.getShopOrders
 );
 
-// Accept an order (assign to shop & mark as Accepted)
 router.patch(
   "/:id/accept",
   authorizedMiddleware,
@@ -55,7 +52,6 @@ router.patch(
   orderController.acceptOrder
 );
 
-// Reject an order
 router.patch(
   "/:id/reject",
   authorizedMiddleware,
@@ -63,17 +59,13 @@ router.patch(
   orderController.rejectOrder
 );
 
-// Update order status
 router.patch(
   "/:id/status",
   authorizedMiddleware,
   shopkeeperOnlyMiddleware,
-  orderController.updateOrderStatus
+  orderController.updateStatus
 );
 
-// ───── Admin-only route ─────
-
-// Delete an order
 router.delete(
   "/:id",
   authorizedMiddleware,

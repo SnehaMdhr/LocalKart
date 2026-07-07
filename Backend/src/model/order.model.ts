@@ -11,8 +11,14 @@ const orderSchema = new Schema(
 
     shopId: {
       type: Schema.Types.ObjectId,
-      ref: "Shop",
+      ref: "User",
       default: null,
+    },
+
+    orderNumber: {
+      type: String,
+      required: true,
+      unique: true,
     },
 
     items: [
@@ -23,6 +29,17 @@ const orderSchema = new Schema(
           required: true,
         },
 
+        productName: {
+          type: String,
+          required: true,
+        },
+
+        price: {
+          type: Number,
+          required: true,
+          min: 0,
+        },
+
         quantity: {
           type: Number,
           required: true,
@@ -31,42 +48,51 @@ const orderSchema = new Schema(
       },
     ],
 
+    deliveryAddress: {
+      fullAddress: {
+        type: String,
+        required: true,
+      },
+
+      latitude: {
+        type: Number,
+        required: true,
+      },
+
+      longitude: {
+        type: Number,
+        required: true,
+      },
+    },
+
     totalAmount: {
       type: Number,
       required: true,
       min: 0,
     },
 
-    deliveryAddress: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-
     paymentMethod: {
       type: String,
-      required: true,
       enum: ["Cash on Delivery", "eSewa"],
+      required: true,
     },
 
     paymentStatus: {
       type: String,
-      required: true,
-      enum: ["Pending", "Paid"],
+      enum: ["Pending", "Paid", "Failed"],
       default: "Pending",
     },
 
     status: {
       type: String,
-      required: true,
       enum: [
         "Pending",
         "Accepted",
-        "Rejected",
         "Preparing",
         "Out for Delivery",
         "Delivered",
         "Cancelled",
+        "Rejected",
       ],
       default: "Pending",
     },
@@ -74,9 +100,19 @@ const orderSchema = new Schema(
     rejectedBy: [
       {
         type: Schema.Types.ObjectId,
-        ref: "Shop",
+        ref: "User",
       },
     ],
+
+    customerNote: {
+      type: String,
+      default: "",
+    },
+
+    estimatedDeliveryTime: {
+      type: Number,
+      default: null,
+    },
   },
   {
     timestamps: true,

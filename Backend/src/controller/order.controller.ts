@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import {
-  CreateOrderDto,
-  UpdateOrderStatusDto,
+  AcceptOrderDTO,
+  CreateOrderDTO,
+  UpdateOrderStatusDTO,
 } from "../dtos/order.dtos";
 import { OrderService } from "../services/order.service";
 
@@ -12,7 +13,7 @@ export class OrderController {
     try {
       const userId = req.user!._id.toString();
 
-      const validatedData = CreateOrderDto.parse(req.body);
+      const validatedData = CreateOrderDTO.parse(req.body);
 
       const order = await orderService.createOrder(
         userId,
@@ -32,98 +33,15 @@ export class OrderController {
     }
   }
 
-  async getMyOrders(req: Request, res: Response) {
+  async getCustomerOrders(req: Request, res: Response) {
     try {
-      const orders = await orderService.getMyOrders(
+      const orders = await orderService.getCustomerOrders(
         req.user!._id.toString()
       );
 
       return res.status(200).json({
         success: true,
         data: orders,
-      });
-    } catch (error: any) {
-      return res.status(error.statusCode ?? 500).json({
-        success: false,
-        message: error.message,
-      });
-    }
-  }
-
-  async getOrderById(req: Request, res: Response) {
-    try {
-      const order = await orderService.getOrderById(
-        req.params.id as string,
-        req.user!._id.toString(),
-        req.user!.role
-      );
-
-      return res.status(200).json({
-        success: true,
-        data: order,
-      });
-    } catch (error: any) {
-      return res.status(error.statusCode ?? 500).json({
-        success: false,
-        message: error.message,
-      });
-    }
-  }
-
-  async updateOrderStatus(req: Request, res: Response) {
-    try {
-      const validatedData = UpdateOrderStatusDto.parse(req.body);
-
-      const order = await orderService.updateStatus(
-        req.params.id as string,
-        validatedData,
-        req.user!._id.toString()
-      );
-
-      return res.status(200).json({
-        success: true,
-        message: "Order status updated successfully",
-        data: order,
-      });
-    } catch (error: any) {
-      return res.status(error.statusCode ?? 500).json({
-        success: false,
-        message: error.message,
-      });
-    }
-  }
-
-  async acceptOrder(req: Request, res: Response) {
-    try {
-      const order = await orderService.acceptOrder(
-        req.params.id as string,
-        req.user!._id.toString()
-      );
-
-      return res.status(200).json({
-        success: true,
-        message: "Order accepted successfully",
-        data: order,
-      });
-    } catch (error: any) {
-      return res.status(error.statusCode ?? 500).json({
-        success: false,
-        message: error.message,
-      });
-    }
-  }
-
-  async rejectOrder(req: Request, res: Response) {
-    try {
-      const order = await orderService.rejectOrder(
-        req.params.id as string,
-        req.user!._id.toString()
-      );
-
-      return res.status(200).json({
-        success: true,
-        message: "Order rejected successfully",
-        data: order,
       });
     } catch (error: any) {
       return res.status(error.statusCode ?? 500).json({
@@ -151,9 +69,108 @@ export class OrderController {
     }
   }
 
+  async getPendingOrders(req: Request, res: Response) {
+    try {
+      const orders = await orderService.getPendingOrders(
+        req.user!._id.toString()
+      );
+
+      return res.status(200).json({
+        success: true,
+        data: orders,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode ?? 500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
+  async getOrderById(req: Request, res: Response) {
+    try {
+      const order = await orderService.getOrderById(String(req.params.id));
+
+      return res.status(200).json({
+        success: true,
+        data: order,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode ?? 500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
+  async acceptOrder(req: Request, res: Response) {
+    try {
+      const validatedData = AcceptOrderDTO.parse(req.body);
+
+      const order = await orderService.acceptOrder(
+        req.user!._id.toString(),
+        String(req.params.id),
+        validatedData
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Order accepted successfully",
+        data: order,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode ?? 500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
+  async rejectOrder(req: Request, res: Response) {
+    try {
+      const order = await orderService.rejectOrder(
+        req.user!._id.toString(),
+        String(req.params.id)
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Order rejected successfully",
+        data: order,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode ?? 500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
+  async updateStatus(req: Request, res: Response) {
+    try {
+      const validatedData = UpdateOrderStatusDTO.parse(req.body);
+
+      const order = await orderService.updateStatus(
+        String(req.params.id),
+        validatedData
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Order status updated successfully",
+        data: order,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode ?? 500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
   async deleteOrder(req: Request, res: Response) {
     try {
-      await orderService.deleteOrder(req.params.id as string);
+      await orderService.deleteOrder(String(req.params.id));
 
       return res.status(200).json({
         success: true,

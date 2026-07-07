@@ -1,22 +1,25 @@
 import z from "zod";
 import { orderSchema } from "../types/order.type";
 
-export const CreateOrderDto = orderSchema.omit({
-  customerId: true,
-  shopId: true,
-  items: true,
-  totalAmount: true,
-  paymentStatus: true,
-  status: true,
+// Customer places an order
+export const CreateOrderDTO = orderSchema.pick({
+  deliveryAddress: true,
+  paymentMethod: true,
+  customerNote: true,
 });
 
-export type CreateOrderDto = z.infer<typeof CreateOrderDto>;
+export type CreateOrderDTO = z.infer<typeof CreateOrderDTO>;
 
-export const UpdateOrderStatusDto = z.object({
+// Shopkeeper accepts an order
+export const AcceptOrderDTO = z.object({
+  estimatedDeliveryTime: z.number().int().positive().optional(),
+});
+
+export type AcceptOrderDTO = z.infer<typeof AcceptOrderDTO>;
+
+// Shopkeeper updates order status
+export const UpdateOrderStatusDTO = z.object({
   status: z.enum([
-    "Pending",
-    "Accepted",
-    "Rejected",
     "Preparing",
     "Out for Delivery",
     "Delivered",
@@ -24,4 +27,11 @@ export const UpdateOrderStatusDto = z.object({
   ]),
 });
 
-export type UpdateOrderStatusDto = z.infer<typeof UpdateOrderStatusDto>;
+export type UpdateOrderStatusDTO = z.infer<
+  typeof UpdateOrderStatusDTO
+>;
+
+// Reject order (currently no request body needed)
+export const RejectOrderDTO = z.object({});
+
+export type RejectOrderDTO = z.infer<typeof RejectOrderDTO>;

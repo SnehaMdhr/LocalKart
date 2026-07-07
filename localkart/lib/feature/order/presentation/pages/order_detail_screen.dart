@@ -257,9 +257,22 @@ class OrderDetailScreen extends StatelessWidget {
           ),
           const SizedBox(width: 14),
           Expanded(
-            child: Text(
-              order.deliveryAddress.isNotEmpty ? order.deliveryAddress : "No address provided",
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, height: 1.5),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  order.deliveryAddress.isNotEmpty ? order.deliveryAddress : "No address provided",
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, height: 1.5),
+                ),
+                if (order.latitude != null && order.longitude != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      "${order.latitude!.toStringAsFixed(6)}, ${order.longitude!.toStringAsFixed(6)}",
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],

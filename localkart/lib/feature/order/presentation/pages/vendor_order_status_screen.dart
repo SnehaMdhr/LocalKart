@@ -108,11 +108,10 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Order #$shortId",
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary),
-                ),
+              children: [                    Text(
+                      order.orderNumber != null ? "Order #${order.orderNumber}" : "Order #$shortId",
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary),
+                    ),
                 const SizedBox(height: 4),
                 Text(
                   _formatDate(order.createdAt ?? ''),

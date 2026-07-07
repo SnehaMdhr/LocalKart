@@ -27,43 +27,51 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(orderViewModelProvider.notifier).getShopOrders();
+      ref.read(orderViewModelProvider.notifier).loadAllShopData();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final orderState = ref.watch(orderViewModelProvider);
-    final orders = orderState.orders ?? [];
-
-    // Group orders by status category
-    final pendingOrders = orders.where((o) => o.status == "Pending").toList();
-    final inProgressOrders = orders
-        .where((o) => ["Accepted", "Preparing", "Out for Delivery"].contains(o.status))
+    final pendingOrders = orderState.pendingOrders ?? [];
+    final activeOrders = (orderState.orders ?? [])
+        .where((o) => ["Accepted", "Preparing", "Out for Delivery"]
+            .contains(o.status))
         .toList();
-    final completedOrders = orders
-        .where((o) => ["Delivered", "Rejected", "Cancelled"].contains(o.status))
+    final completedOrders = (orderState.orders ?? [])
+        .where((o) => ["Delivered", "Rejected", "Cancelled"]
+            .contains(o.status))
         .toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: _buildBody(orderState, pendingOrders, inProgressOrders, completedOrders),
+      body: _buildBody(
+        orderState,
+        pendingOrders,
+        activeOrders,
+        completedOrders,
+      ),
     );
   }
 
   Widget _buildBody(
     OrderState orderState,
     List<OrderEntity> pending,
-    List<OrderEntity> inProgress,
+    List<OrderEntity> active,
     List<OrderEntity> completed,
   ) {
-    if (orderState.status == OrderStatus.loading && (orderState.orders ?? []).isEmpty) {
+    if (orderState.status == OrderStatus.loading &&
+        pending.isEmpty &&
+        (orderState.orders ?? []).isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
-    if (orderState.status == OrderStatus.error && (orderState.orders ?? []).isEmpty) {
+    if (orderState.status == OrderStatus.error &&
+        pending.isEmpty &&
+        (orderState.orders ?? []).isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -72,20 +80,27 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
             const SizedBox(height: 16),
             Text(
               orderState.errorMessage ?? "Failed to load orders",
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 15),
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 15,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: () {
-                ref.read(orderViewModelProvider.notifier).getShopOrders();
+                ref
+                    .read(orderViewModelProvider.notifier)
+                    .loadAllShopData();
               },
               icon: const Icon(Icons.refresh),
               label: const Text("Retry"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
@@ -93,7 +108,7 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
       );
     }
 
-    if (pending.isEmpty && inProgress.isEmpty && completed.isEmpty) {
+    if (pending.isEmpty && active.isEmpty && completed.isEmpty) {
       return const Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -119,44 +134,45 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: () => ref.read(orderViewModelProvider.notifier).getShopOrders(),
+      onRefresh: () =>
+          ref.read(orderViewModelProvider.notifier).loadAllShopData(),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           /// Stats summary
-          _buildStatsRow(pending.length, inProgress.length, completed.length),
+          _buildStatsRow(pending.length, active.length, completed.length),
           const SizedBox(height: 20),
 
-          /// Pending Orders
+          /// Pending Orders (from /shop/pending)
           if (pending.isNotEmpty) ...[
             _sectionHeader("New Orders", pending.length, AppColors.warning),
             const SizedBox(height: 12),
             ...pending.map((order) => Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: _buildOrderCard(order, isPending: true),
-            )),
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: _buildOrderCard(order, isPending: true),
+                )),
             const SizedBox(height: 8),
           ],
 
-          /// In Progress Orders
-          if (inProgress.isNotEmpty) ...[
-            _sectionHeader("In Progress", inProgress.length, AppColors.primary),
+          /// Active Orders (from /shop/orders - Accepted, Preparing, Out for Delivery)
+          if (active.isNotEmpty) ...[
+            _sectionHeader("In Progress", active.length, AppColors.primary),
             const SizedBox(height: 12),
-            ...inProgress.map((order) => Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: _buildOrderCard(order, isPending: false),
-            )),
+            ...active.map((order) => Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: _buildOrderCard(order, isPending: false),
+                )),
             const SizedBox(height: 8),
           ],
 
-          /// Completed / Rejected Orders
+          /// Completed Orders
           if (completed.isNotEmpty) ...[
             _sectionHeader("Completed", completed.length, AppColors.success),
             const SizedBox(height: 12),
             ...completed.map((order) => Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: _buildCompactOrderCard(order),
-            )),
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: _buildCompactOrderCard(order),
+                )),
           ],
         ],
       ),
@@ -166,16 +182,36 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
   Widget _buildStatsRow(int pending, int active, int completed) {
     return Row(
       children: [
-        _statChip("Pending", pending, AppColors.warning, AppColors.warning.withOpacity(0.15)),
+        _statChip(
+          "New",
+          pending,
+          AppColors.warning,
+          AppColors.warning.withValues(alpha: 0.15),
+        ),
         const SizedBox(width: 10),
-        _statChip("Active", active, AppColors.primary, AppColors.primaryExtraLight),
+        _statChip(
+          "Active",
+          active,
+          AppColors.primary,
+          AppColors.primaryExtraLight,
+        ),
         const SizedBox(width: 10),
-        _statChip("Done", completed, AppColors.success, AppColors.success.withOpacity(0.15)),
+        _statChip(
+          "Done",
+          completed,
+          AppColors.success,
+          AppColors.success.withValues(alpha: 0.15),
+        ),
       ],
     );
   }
 
-  Widget _statChip(String label, int count, Color textColor, Color bgColor) {
+  Widget _statChip(
+    String label,
+    int count,
+    Color textColor,
+    Color bgColor,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -212,7 +248,8 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
     return Row(
       children: [
         Container(
-          width: 8, height: 8,
+          width: 8,
+          height: 8,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 8),
@@ -230,21 +267,24 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
 
   Widget _buildOrderCard(OrderEntity order, {required bool isPending}) {
     final itemCount = order.items.length;
-    final shortId = (order.orderId ?? '').length >= 6
-        ? (order.orderId ?? '').substring(0, 6).toUpperCase()
-        : (order.orderId ?? '').toUpperCase();
+    final displayId = order.orderNumber ??
+        ((order.orderId ?? '').length >= 6
+            ? (order.orderId ?? '').substring(0, 6).toUpperCase()
+            : (order.orderId ?? '').toUpperCase());
 
     return Container(
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isPending ? AppColors.warning.withOpacity(0.3) : AppColors.divider,
+          color: isPending
+              ? AppColors.warning.withValues(alpha: 0.3)
+              : AppColors.divider,
           width: isPending ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -259,9 +299,12 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
             child: Row(
               children: [
                 Container(
-                  width: 44, height: 44,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
-                    color: isPending ? AppColors.warning.withOpacity(0.15) : AppColors.primaryExtraLight,
+                    color: isPending
+                        ? AppColors.warning.withValues(alpha: 0.15)
+                        : AppColors.primaryExtraLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -276,7 +319,7 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Order #$shortId",
+                        "Order #$displayId",
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -286,13 +329,19 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
                       const SizedBox(height: 2),
                       Text(
                         "$itemCount item${itemCount != 1 ? 's' : ''}",
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: _statusBgColor(order.status),
                     borderRadius: BorderRadius.circular(8),
@@ -317,22 +366,42 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
               height: 36,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                itemCount: order.items.length > 3 ? 3 : order.items.length,
+                itemCount:
+                    order.items.length > 3 ? 3 : order.items.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                 itemBuilder: (context, index) {
                   final item = order.items[index];
                   final imageUrl = item.imageUrl;
-                  final fullUrl = (imageUrl != null && imageUrl.trim().isNotEmpty)
-                      ? (imageUrl.startsWith('http') ? imageUrl : '${ApiEndpoints.mediaServerUrl}${imageUrl.startsWith('/') ? '' : '/'}$imageUrl')
-                      : null;
+                  final fullUrl =
+                      (imageUrl != null && imageUrl.trim().isNotEmpty)
+                          ? (imageUrl.startsWith('http')
+                              ? imageUrl
+                              : '${ApiEndpoints.mediaServerUrl}${imageUrl.startsWith('/') ? '' : '/'}$imageUrl')
+                          : null;
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: SizedBox(
-                      width: 36, height: 36,
+                      width: 36,
+                      height: 36,
                       child: fullUrl != null
-                          ? Image.network(fullUrl, fit: BoxFit.cover,
-                              errorBuilder: (c, e, s) => Container(color: AppColors.inputFill, child: const Icon(Icons.image_outlined, size: 16, color: AppColors.grey)))
-                          : Container(color: AppColors.inputFill, child: const Icon(Icons.image_outlined, size: 16, color: AppColors.grey)),
+                          ? Image.network(fullUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (c, e, s) => Container(
+                                    color: AppColors.inputFill,
+                                    child: const Icon(
+                                      Icons.image_outlined,
+                                      size: 16,
+                                      color: AppColors.grey,
+                                    ),
+                                  ))
+                          : Container(
+                              color: AppColors.inputFill,
+                              child: const Icon(
+                                Icons.image_outlined,
+                                size: 16,
+                                color: AppColors.grey,
+                              ),
+                            ),
                     ),
                   );
                 },
@@ -345,15 +414,28 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
             child: Row(
               children: [
-                const Text("Total: ", style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                const Text(
+                  "Total: ",
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
                 Text(
                   "Rs. ${order.totalAmount}",
-                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 18),
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
                 ),
                 const Spacer(),
                 Text(
                   order.paymentMethod,
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -391,7 +473,9 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.textSecondary,
                 side: const BorderSide(color: AppColors.divider),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
@@ -407,7 +491,9 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.error,
                 side: const BorderSide(color: AppColors.error),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
@@ -423,7 +509,9 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
@@ -433,7 +521,10 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
     );
   }
 
-  Widget _buildStatusActions(OrderEntity order, List<String> nextStatuses) {
+  Widget _buildStatusActions(
+    OrderEntity order,
+    List<String> nextStatuses,
+  ) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
       child: Row(
@@ -447,7 +538,9 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.textSecondary,
                 side: const BorderSide(color: AppColors.divider),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
@@ -460,11 +553,14 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => _confirmReject(order),
                   icon: const Icon(Icons.close, size: 18),
-                  label: const Text("Reject", style: TextStyle(fontSize: 13)),
+                  label: const Text("Reject",
+                      style: TextStyle(fontSize: 13)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.error,
                     side: const BorderSide(color: AppColors.error),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
@@ -474,11 +570,14 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
               child: ElevatedButton.icon(
                 onPressed: () => _updateStatus(order, status),
                 icon: const Icon(Icons.arrow_forward, size: 18),
-                label: Text(status, style: const TextStyle(fontSize: 13)),
+                label: Text(status,
+                    style: const TextStyle(fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
               ),
@@ -497,11 +596,14 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
         child: OutlinedButton.icon(
           onPressed: () => _viewOrder(order),
           icon: const Icon(Icons.visibility, size: 18),
-          label: const Text("View Details", style: TextStyle(fontSize: 13)),
+          label: const Text("View Details",
+              style: TextStyle(fontSize: 13)),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.textSecondary,
             side: const BorderSide(color: AppColors.divider),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             padding: const EdgeInsets.symmetric(vertical: 12),
           ),
         ),
@@ -510,9 +612,10 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
   }
 
   Widget _buildCompactOrderCard(OrderEntity order) {
-    final shortId = (order.orderId ?? '').length >= 6
-        ? (order.orderId ?? '').substring(0, 6).toUpperCase()
-        : (order.orderId ?? '').toUpperCase();
+    final displayId = order.orderNumber ??
+        ((order.orderId ?? '').length >= 6
+            ? (order.orderId ?? '').substring(0, 6).toUpperCase()
+            : (order.orderId ?? '').toUpperCase());
 
     return GestureDetector(
       onTap: () => _viewOrder(order),
@@ -526,37 +629,66 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
         child: Row(
           children: [
             Container(
-              width: 40, height: 40,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: AppColors.primaryExtraLight,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.receipt_long, color: AppColors.primary, size: 20),
+              child: const Icon(
+                Icons.receipt_long,
+                color: AppColors.primary,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("#$shortId", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
+                  Text(
+                    "#$displayId",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text("Rs. ${order.totalAmount}", style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                  Text(
+                    "Rs. ${order.totalAmount}",
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
                 ],
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 4,
+              ),
               decoration: BoxDecoration(
                 color: _statusBgColor(order.status),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
                 order.status,
-                style: TextStyle(color: _statusTextColor(order.status), fontSize: 11, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: _statusTextColor(order.status),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             const SizedBox(width: 6),
-            const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.textSecondary,
+              size: 20,
+            ),
           ],
         ),
       ),
@@ -566,7 +698,9 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
   void _viewOrder(OrderEntity order) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => VendorOrderStatusScreen(order: order)),
+      MaterialPageRoute(
+        builder: (_) => VendorOrderStatusScreen(order: order),
+      ),
     );
   }
 
@@ -574,8 +708,14 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
     final orderId = order.orderId;
     if (orderId == null) return;
 
-    await ref.read(orderViewModelProvider.notifier).acceptOrder(orderId);
+    await ref
+        .read(orderViewModelProvider.notifier)
+        .acceptOrder(orderId);
     if (!mounted) return;
+
+    // Refresh both pending and active lists
+    ref.read(orderViewModelProvider.notifier).loadAllShopData();
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text("Order accepted successfully"),
@@ -589,8 +729,14 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Reject Order", style: TextStyle(color: AppColors.textPrimary, fontSize: 18)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text("Reject Order",
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 18,
+            )),
         content: const Text(
           "Are you sure you want to reject this order? This action cannot be undone.",
           style: TextStyle(color: AppColors.textSecondary),
@@ -598,11 +744,16 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
+            child: const Text("Cancel",
+                style: TextStyle(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("Reject", style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+            child: const Text("Reject",
+                style: TextStyle(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.bold,
+                )),
           ),
         ],
       ),
@@ -611,8 +762,14 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
     if (confirmed == true && mounted) {
       final orderId = order.orderId;
       if (orderId == null) return;
-      await ref.read(orderViewModelProvider.notifier).rejectOrder(orderId);
+      await ref
+          .read(orderViewModelProvider.notifier)
+          .rejectOrder(orderId);
       if (!mounted) return;
+
+      // Refresh to remove rejected order from list
+      ref.read(orderViewModelProvider.notifier).loadAllShopData();
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Order rejected"),
@@ -623,14 +780,16 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
     }
   }
 
-  Future<void> _updateStatus(OrderEntity order, String newStatus) async {
+  Future<void> _updateStatus(
+    OrderEntity order,
+    String newStatus,
+  ) async {
     final orderId = order.orderId;
     if (orderId == null) return;
 
-    await ref.read(orderViewModelProvider.notifier).updateOrderStatus(
-      orderId: orderId,
-      status: newStatus,
-    );
+    await ref
+        .read(orderViewModelProvider.notifier)
+        .updateOrderStatus(orderId: orderId, status: newStatus);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -643,27 +802,43 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
 
   Color _statusBgColor(String status) {
     switch (status) {
-      case "Pending": return AppColors.warning.withOpacity(0.15);
-      case "Accepted": return const Color(0xFFE3F5E8);
-      case "Rejected": return const Color(0xFFFFEEEE);
-      case "Preparing": return const Color(0xFFFFF4D6);
-      case "Out for Delivery": return const Color(0xFFE1F5FE);
-      case "Delivered": return AppColors.success.withOpacity(0.15);
-      case "Cancelled": return const Color(0xFFF3E5F5);
-      default: return AppColors.inputFill;
+      case "Pending":
+        return AppColors.warning.withValues(alpha: 0.15);
+      case "Accepted":
+        return const Color(0xFFE3F5E8);
+      case "Rejected":
+        return const Color(0xFFFFEEEE);
+      case "Preparing":
+        return const Color(0xFFFFF4D6);
+      case "Out for Delivery":
+        return const Color(0xFFE1F5FE);
+      case "Delivered":
+        return AppColors.success.withValues(alpha: 0.15);
+      case "Cancelled":
+        return const Color(0xFFF3E5F5);
+      default:
+        return AppColors.inputFill;
     }
   }
 
   Color _statusTextColor(String status) {
     switch (status) {
-      case "Pending": return AppColors.warning;
-      case "Accepted": return AppColors.primary;
-      case "Rejected": return AppColors.error;
-      case "Preparing": return const Color(0xFFB8860B);
-      case "Out for Delivery": return const Color(0xFF0288D1);
-      case "Delivered": return AppColors.success;
-      case "Cancelled": return AppColors.textSecondary;
-      default: return AppColors.textSecondary;
+      case "Pending":
+        return AppColors.warning;
+      case "Accepted":
+        return AppColors.primary;
+      case "Rejected":
+        return AppColors.error;
+      case "Preparing":
+        return const Color(0xFFB8860B);
+      case "Out for Delivery":
+        return const Color(0xFF0288D1);
+      case "Delivered":
+        return AppColors.success;
+      case "Cancelled":
+        return AppColors.textSecondary;
+      default:
+        return AppColors.textSecondary;
     }
   }
 }

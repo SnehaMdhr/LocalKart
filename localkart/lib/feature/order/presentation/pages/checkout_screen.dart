@@ -51,8 +51,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
     setState(() => _isPlacingOrder = true);
 
+    // Use default coordinates since we don't have a map picker
+    const defaultLatitude = 27.7172;
+    const defaultLongitude = 85.3240;
+
     final order = await ref.read(orderViewModelProvider.notifier).placeOrder(
       deliveryAddress: address,
+      latitude: defaultLatitude,
+      longitude: defaultLongitude,
       paymentMethod: _selectedPayment,
     );
 

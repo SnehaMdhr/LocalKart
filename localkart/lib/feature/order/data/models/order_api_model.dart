@@ -78,12 +78,17 @@ class OrderApiModel {
   final String? orderId;
   final String? customerId;
   final String? shopId;
+  final String? orderNumber;
   final List<OrderItemApiModel> items;
   final int totalAmount;
   final String deliveryAddress;
+  final double? latitude;
+  final double? longitude;
   final String paymentMethod;
   final String paymentStatus;
   final String status;
+  final String? customerNote;
+  final int? estimatedDeliveryTime;
   final String? createdAt;
   final String? updatedAt;
 
@@ -91,12 +96,17 @@ class OrderApiModel {
     this.orderId,
     this.customerId,
     this.shopId,
+    this.orderNumber,
     this.items = const [],
     this.totalAmount = 0,
     this.deliveryAddress = '',
+    this.latitude,
+    this.longitude,
     this.paymentMethod = 'Cash on Delivery',
     this.paymentStatus = 'Pending',
     this.status = 'Pending',
+    this.customerNote,
+    this.estimatedDeliveryTime,
     this.createdAt,
     this.updatedAt,
   });
@@ -117,10 +127,24 @@ class OrderApiModel {
       shopId = shopRaw as String?;
     }
 
+    // Parse structured deliveryAddress object
+    final deliveryRaw = json['deliveryAddress'];
+    String deliveryAddress = '';
+    double? latitude;
+    double? longitude;
+    if (deliveryRaw is Map<String, dynamic>) {
+      deliveryAddress = deliveryRaw['fullAddress'] as String? ?? '';
+      latitude = (deliveryRaw['latitude'] as num?)?.toDouble();
+      longitude = (deliveryRaw['longitude'] as num?)?.toDouble();
+    } else {
+      deliveryAddress = deliveryRaw as String? ?? '';
+    }
+
     return OrderApiModel(
       orderId: json['_id'] as String? ?? json['orderId'] as String?,
       customerId: customerId,
       shopId: shopId,
+      orderNumber: json['orderNumber'] as String?,
       items: (json['items'] as List<dynamic>?)
               ?.map(
                 (e) => OrderItemApiModel.fromJson(e as Map<String, dynamic>),
@@ -128,10 +152,14 @@ class OrderApiModel {
               .toList() ??
           [],
       totalAmount: json['totalAmount'] as int? ?? 0,
-      deliveryAddress: json['deliveryAddress'] as String? ?? '',
+      deliveryAddress: deliveryAddress,
+      latitude: latitude,
+      longitude: longitude,
       paymentMethod: json['paymentMethod'] as String? ?? 'Cash on Delivery',
       paymentStatus: json['paymentStatus'] as String? ?? 'Pending',
       status: json['status'] as String? ?? 'Pending',
+      customerNote: json['customerNote'] as String?,
+      estimatedDeliveryTime: json['estimatedDeliveryTime'] as int?,
       createdAt: json['createdAt'] as String?,
       updatedAt: json['updatedAt'] as String?,
     );
@@ -151,12 +179,17 @@ class OrderApiModel {
       orderId: orderId,
       customerId: customerId,
       shopId: shopId,
+      orderNumber: orderNumber,
       items: items.map((e) => e.toEntity()).toList(),
       totalAmount: totalAmount,
       deliveryAddress: deliveryAddress,
+      latitude: latitude,
+      longitude: longitude,
       paymentMethod: paymentMethod,
       paymentStatus: paymentStatus,
       status: status,
+      customerNote: customerNote,
+      estimatedDeliveryTime: estimatedDeliveryTime,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -171,12 +204,17 @@ class OrderApiModel {
       orderId: orderId,
       customerId: customerId,
       shopId: shopId,
+      orderNumber: orderNumber,
       items: items.map((e) => e.toHiveModel()).toList(),
       totalAmount: totalAmount,
       deliveryAddress: deliveryAddress,
+      latitude: latitude,
+      longitude: longitude,
       paymentMethod: paymentMethod,
       paymentStatus: paymentStatus,
       status: status,
+      customerNote: customerNote,
+      estimatedDeliveryTime: estimatedDeliveryTime,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );

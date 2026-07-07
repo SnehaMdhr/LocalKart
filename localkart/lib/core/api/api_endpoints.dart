@@ -77,8 +77,9 @@ class ApiEndpoints {
 
   //=============== Order Endpoints ============
   static const String createOrder = "/order/";
-  static const String getMyOrders = "/order/";
-  static const String getShopOrders = "/order/shop";
+  static const String getMyOrders = "/order/my-orders";
+  static const String getShopOrders = "/order/shop/orders";
+  static const String getPendingOrders = "/order/shop/pending";
   static const String getOrderById = "/order/";
   static const String acceptOrder = "/order/";
   static const String rejectOrder = "/order/";

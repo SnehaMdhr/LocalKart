@@ -40,16 +40,36 @@ class OrderHiveModel extends HiveObject {
   @HiveField(10)
   final String? updatedAt;
 
+  @HiveField(11)
+  final String? orderNumber;
+
+  @HiveField(12)
+  final double? latitude;
+
+  @HiveField(13)
+  final double? longitude;
+
+  @HiveField(14)
+  final String? customerNote;
+
+  @HiveField(15)
+  final int? estimatedDeliveryTime;
+
   OrderHiveModel({
     String? orderId,
     this.customerId,
     this.shopId,
+    this.orderNumber,
     this.items = const [],
     this.totalAmount = 0,
     this.deliveryAddress = '',
+    this.latitude,
+    this.longitude,
     this.paymentMethod = 'Cash on Delivery',
     this.paymentStatus = 'Pending',
     this.status = 'Pending',
+    this.customerNote,
+    this.estimatedDeliveryTime,
     this.createdAt,
     this.updatedAt,
   }) : orderId = orderId ?? const Uuid().v4();
@@ -59,12 +79,17 @@ class OrderHiveModel extends HiveObject {
       orderId: entity.orderId,
       customerId: entity.customerId,
       shopId: entity.shopId,
+      orderNumber: entity.orderNumber,
       items: entity.items.map((e) => OrderItemHiveModel.fromEntity(e)).toList(),
       totalAmount: entity.totalAmount,
       deliveryAddress: entity.deliveryAddress,
+      latitude: entity.latitude,
+      longitude: entity.longitude,
       paymentMethod: entity.paymentMethod,
       paymentStatus: entity.paymentStatus,
       status: entity.status,
+      customerNote: entity.customerNote,
+      estimatedDeliveryTime: entity.estimatedDeliveryTime,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     );
@@ -75,12 +100,17 @@ class OrderHiveModel extends HiveObject {
       orderId: orderId,
       customerId: customerId,
       shopId: shopId,
+      orderNumber: orderNumber,
       items: items.map((e) => e.toEntity()).toList(),
       totalAmount: totalAmount,
       deliveryAddress: deliveryAddress,
+      latitude: latitude,
+      longitude: longitude,
       paymentMethod: paymentMethod,
       paymentStatus: paymentStatus,
       status: status,
+      customerNote: customerNote,
+      estimatedDeliveryTime: estimatedDeliveryTime,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );

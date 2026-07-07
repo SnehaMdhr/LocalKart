@@ -40,6 +40,7 @@ class ApiEndpoints {
   static String userById(String id) => '/auth/$id';
   static String userPhoto(String id) => '/auth/$id/photo';
   static String updateProfile = "/auth/update-profile";
+  static String changePassword = "/auth/change-password";
 
   // ============ Shop Endpoints ============
   static const String registerShop = "/shop/register-shop";
@@ -66,4 +67,21 @@ class ApiEndpoints {
   static const String updateCartQuantity = "/cart/update";
   static const String removeFromCart = "/cart/remove/";
   static const String clearCart = "/cart/clear";
+
+  //=============== Address Endpoints ============
+  static const String createAddress = "/address/";
+  static const String getAddresses = "/address/";
+  static const String getAddressById = "/address/";
+  static const String updateAddress = "/address/";
+  static const String deleteAddress = "/address/";
+
+  //=============== Order Endpoints ============
+  static const String createOrder = "/order/";
+  static const String getMyOrders = "/order/";
+  static const String getShopOrders = "/order/shop";
+  static const String getOrderById = "/order/";
+  static const String acceptOrder = "/order/";
+  static const String rejectOrder = "/order/";
+  static const String updateOrderStatus = "/order/";
+  static const String deleteOrder = "/order/";
 }

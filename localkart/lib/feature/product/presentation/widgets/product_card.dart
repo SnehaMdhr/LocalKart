@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
+import 'package:localkart/feature/cart/presentation/view_model/cart_view_model.dart';
 import '../../domain/entities/product_entity.dart';
 
-class ProductCard extends StatelessWidget {
+class ProductCard extends ConsumerWidget {
   final ProductEntity product;
   final VoidCallback? onTap;
 
@@ -14,7 +16,14 @@ class ProductCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cartState = ref.watch(cartViewModelProvider);
+    final productId = product.productId;
+
+    final isInCart = productId != null &&
+        productId.trim().isNotEmpty &&
+        cartState.cart?.items.any((item) => item.productId == productId) == true;
+
     return Material(
       color: AppColors.card,
       borderRadius: BorderRadius.circular(16),
@@ -48,23 +57,9 @@ class ProductCard extends StatelessWidget {
                       Positioned(
                         bottom: 8,
                         right: 8,
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: IconButton(
-                            padding: EdgeInsets.zero,
-                            onPressed: () {},
-                            icon: const Icon(
-                              Icons.add,
-                              color: AppColors.white,
-                              size: 20,
-                            ),
-                          ),
-                        ),
+                        child: isInCart
+                            ? _buildInCartBadge()
+                            : _buildAddButton(context, ref, productId),
                       ),
                     ],
                   ),
@@ -109,6 +104,80 @@ class ProductCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAddButton(BuildContext context, WidgetRef ref, String? productId) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: IconButton(
+        padding: EdgeInsets.zero,
+        onPressed: productId == null || productId.trim().isEmpty
+            ? null
+            : () async {
+                await ref.read(cartViewModelProvider.notifier).addToCart(
+                  productId,
+                  quantity: 1,
+                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        "Added ${product.productName} to cart",
+                      ),
+                      backgroundColor: AppColors.primary,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+        icon: const Icon(
+          Icons.add,
+          color: AppColors.white,
+          size: 20,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInCartBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.primaryExtraLight,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.3),
+        ),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.check_circle,
+            color: AppColors.primary,
+            size: 14,
+          ),
+          SizedBox(width: 4),
+          Text(
+            "In Cart",
+            style: TextStyle(
+              color: AppColors.primary,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

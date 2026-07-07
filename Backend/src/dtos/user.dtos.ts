@@ -30,5 +30,18 @@ export type LoginUserDTO = z.infer<typeof LoginUserDTO>;
 
 export const UpdateUserDTO = userSchema.omit({ role: true }).partial();
 export type UpdateUserDTO = z.infer<typeof UpdateUserDTO>;
+export const ChangePasswordDTO = z.object({
+    oldPassword: z.string().min(6),
+    newPassword: z.string().min(8),
+    confirmPassword: z.string().min(8),
+}).refine(
+    (data) => data.newPassword === data.confirmPassword,
+    {
+        message: "Passwords do not match",
+        path: ["confirmPassword"],
+    }
+);
+
+export type ChangePasswordDTO = z.infer<typeof ChangePasswordDTO>;
 
 

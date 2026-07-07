@@ -4,9 +4,11 @@ import 'package:hive/hive.dart';
 import 'package:localkart/core/constants/hive_table_constants.dart';
 import 'package:localkart/feature/auth/data/models/auth_hive_model.dart';
 import 'package:localkart/feature/cart/data/models/cart_hive_model.dart';
+import 'package:localkart/feature/order/data/models/order_hive_model.dart';
 import 'package:localkart/feature/collection/data/models/collection_hive_model.dart';
 import 'package:localkart/feature/product/data/models/product_hive_model.dart';
 import 'package:localkart/feature/vendor_registeration/data/models/shop_hive_model.dart';
+import 'package:localkart/feature/address/data/models/address_hive_model.dart';
 import 'package:path_provider/path_provider.dart';
 
 final hiveServiceProvider = Provider<HiveService>((ref){
@@ -43,6 +45,15 @@ class HiveService {
       Hive.registerAdapter(CartHiveModelAdapter());
       Hive.registerAdapter(CartItemHiveModelAdapter());
     }
+
+    if(!Hive.isAdapterRegistered(HiveTableConstant.orderTypeId)){
+      Hive.registerAdapter(OrderHiveModelAdapter());
+      Hive.registerAdapter(OrderItemHiveModelAdapter());
+    }
+
+    if(!Hive.isAdapterRegistered(HiveTableConstant.addressTypeId)){
+      Hive.registerAdapter(AddressHiveModelAdapter());
+    }
   }
   //Open boxes
   Future<void> openBoxes() async{
@@ -69,6 +80,20 @@ class HiveService {
     } catch (e) {
       await Hive.deleteBoxFromDisk(HiveTableConstant.cartTable);
       await Hive.openBox<CartHiveModel>(HiveTableConstant.cartTable);
+    }
+
+    try {
+      await Hive.openBox<OrderHiveModel>(HiveTableConstant.orderTable);
+    } catch (e) {
+      await Hive.deleteBoxFromDisk(HiveTableConstant.orderTable);
+      await Hive.openBox<OrderHiveModel>(HiveTableConstant.orderTable);
+    }
+
+    try {
+      await Hive.openBox<AddressHiveModel>(HiveTableConstant.addressTable);
+    } catch (e) {
+      await Hive.deleteBoxFromDisk(HiveTableConstant.addressTable);
+      await Hive.openBox<AddressHiveModel>(HiveTableConstant.addressTable);
     }
   }
   //close boxes
@@ -191,6 +216,60 @@ class HiveService {
 
   Future<void> clearCartLocally() async {
     await _cartBox.clear();
+  }
+
+  // ======== Order Queries ===============
+  Box<OrderHiveModel> get _orderBox {
+    if (!Hive.isBoxOpen(HiveTableConstant.orderTable)) {
+      throw Exception('Hive box ${HiveTableConstant.orderTable} is not open');
+    }
+    return Hive.box<OrderHiveModel>(HiveTableConstant.orderTable);
+  }
+
+  Future<List<OrderHiveModel>> getAllOrders() async {
+    return _orderBox.values.toList();
+  }
+
+  Future<OrderHiveModel?> getOrderById(String orderId) async {
+    return _orderBox.get(orderId);
+  }
+
+  Future<void> cacheOrders(List<OrderHiveModel> orders) async {
+    await _orderBox.clear();
+    for (var order in orders) {
+      await _orderBox.put(order.orderId, order);
+    }
+  }
+
+  Future<void> clearOrdersLocally() async {
+    await _orderBox.clear();
+  }
+
+  // ======== Address Queries ===============
+  Box<AddressHiveModel> get _addressBox {
+    if (!Hive.isBoxOpen(HiveTableConstant.addressTable)) {
+      throw Exception('Hive box ${HiveTableConstant.addressTable} is not open');
+    }
+    return Hive.box<AddressHiveModel>(HiveTableConstant.addressTable);
+  }
+
+  Future<List<AddressHiveModel>> getAddresses() async {
+    return _addressBox.values.toList();
+  }
+
+  Future<AddressHiveModel?> getAddressById(String addressId) async {
+    return _addressBox.get(addressId);
+  }
+
+  Future<void> cacheAddresses(List<AddressHiveModel> addresses) async {
+    await _addressBox.clear();
+    for (var address in addresses) {
+      await _addressBox.put(address.addressId, address);
+    }
+  }
+
+  Future<void> clearAddressesLocally() async {
+    await _addressBox.clear();
   }
 }
 

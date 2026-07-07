@@ -18,8 +18,8 @@ class CartHiveModelAdapter extends TypeAdapter<CartHiveModel> {
     };
     return CartHiveModel(
       cartId: fields[0] as String?,
-      userId: (fields[1] as String?) ?? '',
-      items: (fields[2] as List?)?.cast<CartItemHiveModel>() ?? [],
+      userId: fields[1] as String,
+      items: (fields[2] as List).cast<CartItemHiveModel>(),
     );
   }
 
@@ -59,9 +59,9 @@ class CartItemHiveModelAdapter extends TypeAdapter<CartItemHiveModel> {
     return CartItemHiveModel(
       productId: fields[0] as String,
       productName: fields[1] as String?,
-      price: fields[2] as int?,
+      price: (fields[2] as num?)?.toInt(),
       imageUrl: fields[3] as String?,
-      quantity: fields[4] as int? ?? 1,
+      quantity: (fields[4] as num).toInt(),
     );
   }
 

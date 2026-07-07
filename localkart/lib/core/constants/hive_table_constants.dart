@@ -17,4 +17,13 @@ class HiveTableConstant {
 
   static const int cartTypeId = 4;
   static const String cartTable = "cart_table";
+
+  static const int orderTypeId = 6;
+  static const String orderTable = "order_table";
+
+  static const int orderItemTypeId = 7;
+  static const String orderItemTable = "order_item_table";
+
+  static const int addressTypeId = 8;
+  static const String addressTable = "address_table";
 }

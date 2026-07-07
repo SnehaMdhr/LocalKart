@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/services/storage/user_session_service.dart';
 import 'package:localkart/feature/auth/presentation/pages/discover_screen.dart';
+import 'package:localkart/feature/order/domain/entities/order_entity.dart';
+import 'package:localkart/feature/order/presentation/pages/order_detail_screen.dart';
+import 'package:localkart/feature/order/presentation/view_model/order_view_model.dart';
 import 'package:localkart/feature/product/presentation/pages/product_detail_screen.dart';
 import 'package:localkart/feature/product/presentation/states/product_state.dart';
 import 'package:localkart/feature/product/presentation/view_model/product_view_model.dart';
@@ -22,6 +25,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     Future.microtask(() {
       ref.read(productViewModelProvider.notifier).getAllProducts();
+      ref.read(orderViewModelProvider.notifier).getMyOrders();
     });
   }
 
@@ -30,14 +34,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final session = ref.watch(userSessionServiceProvider);
     final userName = session.getCurrentUserName() ?? "User";
     final state = ref.watch(productViewModelProvider);
+    final orderState = ref.watch(orderViewModelProvider);
+
+    final inProgressStatuses = ["Pending", "Accepted", "Preparing", "Out for Delivery"];
+    final activeOrders = (orderState.orders ?? [])
+        .where((o) => inProgressStatuses.contains(o.status))
+        .toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: _buildBody(state, userName),
+      body: _buildBody(state, userName, activeOrders),
     );
   }
 
-  Widget _buildBody(ProductState state, String userName) {
+  Widget _buildBody(ProductState state, String userName, List<OrderEntity> activeOrders) {
     if (state.status == ProductStatus.loading) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
@@ -94,6 +104,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           const SizedBox(height: 20),
+
+          /// Active Orders Section
+          if (activeOrders.isNotEmpty) ...[            
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 10, height: 10,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      "Active Orders",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...activeOrders.map((order) => GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => OrderDetailScreen(order: order),
+                  ),
+                );
+              },
+              child: _buildActiveOrderCard(order),
+            )),
+            const SizedBox(height: 20),
+          ],
 
           /// Section Header
           Row(
@@ -152,6 +204,138 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 },
               );
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveOrderCard(OrderEntity order) {
+    final itemCount = order.items.length;
+    final shortId = (order.orderId ?? '').length >= 8
+        ? (order.orderId ?? '').substring(0, 8).toUpperCase()
+        : (order.orderId ?? '').toUpperCase();
+
+    Color statusBgColor, statusTextColor;
+    switch (order.status) {
+      case "Pending":
+        statusBgColor = AppColors.warning.withOpacity(0.15);
+        statusTextColor = AppColors.warning;
+        break;
+      case "Accepted":
+        statusBgColor = const Color(0xFFE3F5E8);
+        statusTextColor = AppColors.primary;
+        break;
+      case "Preparing":
+        statusBgColor = const Color(0xFFFFF4D6);
+        statusTextColor = Color(0xFFB8860B);
+        break;
+      case "Out for Delivery":
+        statusBgColor = const Color(0xFFE1F5FE);
+        statusTextColor = Color(0xFF0288D1);
+        break;
+      default:
+        statusBgColor = AppColors.inputFill;
+        statusTextColor = AppColors.textSecondary;
+    }
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          /// Order icon
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: AppColors.primaryExtraLight,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.receipt_long,
+              color: AppColors.primary,
+              size: 26,
+            ),
+          ),
+          const SizedBox(width: 14),
+
+          /// Order info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      "#$shortId",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: statusBgColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        order.status,
+                        style: TextStyle(
+                          color: statusTextColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Text(
+                      "$itemCount item${itemCount != 1 ? 's' : ''}",
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      "Rs. ${order.totalAmount}",
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          /// Chevron
+          const Icon(
+            Icons.chevron_right,
+            color: AppColors.textSecondary,
+            size: 22,
           ),
         ],
       ),

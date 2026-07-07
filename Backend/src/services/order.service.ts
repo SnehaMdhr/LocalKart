@@ -27,18 +27,26 @@ export class OrderService {
       throw new HttpError(400, "Cart is empty");
     }
 
+    // Merge duplicate cart items by productId to prevent duplicate entries
+    const mergedMap = new Map<string, { product: any; quantity: number }>();
+    for (const item of cart.items) {
+      const product: any = item.productId;
+      const key = product._id.toString();
+      if (mergedMap.has(key)) {
+        mergedMap.get(key)!.quantity += item.quantity;
+      } else {
+        mergedMap.set(key, { product, quantity: item.quantity });
+      }
+    }
+
     let totalAmount = 0;
-
-    const items = cart.items.map((item: any) => {
-      const product = item.productId;
-
-      totalAmount += product.price * item.quantity;
-
+    const items = Array.from(mergedMap.values()).map(({ product, quantity }) => {
+      totalAmount += product.price * quantity;
       return {
         productId: product._id,
         productName: product.productName,
         price: product.price,
-        quantity: item.quantity,
+        quantity,
       };
     });
 

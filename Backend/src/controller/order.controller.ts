@@ -5,8 +5,38 @@ import {
   UpdateOrderStatusDTO,
 } from "../dtos/order.dtos";
 import { OrderService } from "../services/order.service";
+import { ShopModel } from "../model/shop.model";
+import { IOrder } from "../model/order.model";
 
 const orderService = new OrderService();
+
+/**
+ * Attach shop details (shopName, address) to an order's JSON response.
+ * shopId references User, so we look up the Shop document by userId.
+ */
+async function attachShopDetails(order: IOrder) {
+  const orderObj = order.toObject();
+  const shopIdField = orderObj.shopId;
+  if (shopIdField) {
+    // shopId could be a populated User object or an ObjectId
+    const shopUserId =
+      typeof shopIdField === "object" && "_id" in shopIdField
+        ? shopIdField._id
+        : shopIdField;
+    const shop = await ShopModel.findOne({ userId: shopUserId });
+    if (shop) {
+      (orderObj as any).shopDetails = {
+        shopName: shop.shopName,
+        address: shop.address,
+      };
+    }
+  }
+  return orderObj;
+}
+
+async function attachShopDetailsToOrders(orders: IOrder[]) {
+  return Promise.all(orders.map(attachShopDetails));
+}
 
 export class OrderController {
   async createOrder(req: Request, res: Response) {
@@ -39,9 +69,11 @@ export class OrderController {
         req.user!._id.toString()
       );
 
+      const enriched = await attachShopDetailsToOrders(orders);
+
       return res.status(200).json({
         success: true,
-        data: orders,
+        data: enriched,
       });
     } catch (error: any) {
       return res.status(error.statusCode ?? 500).json({
@@ -57,9 +89,11 @@ export class OrderController {
         req.user!._id.toString()
       );
 
+      const enriched = await attachShopDetailsToOrders(orders);
+
       return res.status(200).json({
         success: true,
-        data: orders,
+        data: enriched,
       });
     } catch (error: any) {
       return res.status(error.statusCode ?? 500).json({
@@ -75,9 +109,11 @@ export class OrderController {
         req.user!._id.toString()
       );
 
+      const enriched = await attachShopDetailsToOrders(orders);
+
       return res.status(200).json({
         success: true,
-        data: orders,
+        data: enriched,
       });
     } catch (error: any) {
       return res.status(error.statusCode ?? 500).json({
@@ -91,9 +127,11 @@ export class OrderController {
     try {
       const order = await orderService.getOrderById(String(req.params.id));
 
+      const enriched = order.shopId ? await attachShopDetails(order) : order.toObject();
+
       return res.status(200).json({
         success: true,
-        data: order,
+        data: enriched,
       });
     } catch (error: any) {
       return res.status(error.statusCode ?? 500).json({
@@ -113,10 +151,12 @@ export class OrderController {
         validatedData
       );
 
+      const enriched = order.shopId ? await attachShopDetails(order) : order.toObject();
+
       return res.status(200).json({
         success: true,
         message: "Order accepted successfully",
-        data: order,
+        data: enriched,
       });
     } catch (error: any) {
       return res.status(error.statusCode ?? 500).json({
@@ -133,10 +173,12 @@ export class OrderController {
         String(req.params.id)
       );
 
+      const enriched = order.shopId ? await attachShopDetails(order) : order.toObject();
+
       return res.status(200).json({
         success: true,
         message: "Order rejected successfully",
-        data: order,
+        data: enriched,
       });
     } catch (error: any) {
       return res.status(error.statusCode ?? 500).json({
@@ -155,10 +197,12 @@ export class OrderController {
         validatedData
       );
 
+      const enriched = order.shopId ? await attachShopDetails(order) : order.toObject();
+
       return res.status(200).json({
         success: true,
         message: "Order status updated successfully",
-        data: order,
+        data: enriched,
       });
     } catch (error: any) {
       return res.status(error.statusCode ?? 500).json({

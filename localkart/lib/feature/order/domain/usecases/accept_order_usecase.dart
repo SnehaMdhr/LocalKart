@@ -9,11 +9,15 @@ import 'package:localkart/feature/order/domain/repositories/order_repository.dar
 
 class AcceptOrderParams extends Equatable {
   final String orderId;
+  final int? estimatedDeliveryTime;
 
-  const AcceptOrderParams({required this.orderId});
+  const AcceptOrderParams({
+    required this.orderId,
+    this.estimatedDeliveryTime,
+  });
 
   @override
-  List<Object?> get props => [orderId];
+  List<Object?> get props => [orderId, estimatedDeliveryTime];
 }
 
 final acceptOrderUsecaseProvider = Provider<AcceptOrderUsecase>((ref) {
@@ -30,6 +34,9 @@ class AcceptOrderUsecase
 
   @override
   Future<Either<Failure, OrderEntity>> call(AcceptOrderParams params) {
-    return _orderRepository.acceptOrder(params.orderId);
+    return _orderRepository.acceptOrder(
+      orderId: params.orderId,
+      estimatedDeliveryTime: params.estimatedDeliveryTime,
+    );
   }
 }

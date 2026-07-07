@@ -55,6 +55,27 @@ class OrderHiveModel extends HiveObject {
   @HiveField(15)
   final int? estimatedDeliveryTime;
 
+  @HiveField(16)
+  final String? customerName;
+
+  @HiveField(17)
+  final String? customerAddress;
+
+  @HiveField(18)
+  final String? customerPhone;
+
+  @HiveField(19)
+  final String? vendorName;
+
+  @HiveField(20)
+  final String? shopName;
+
+  @HiveField(21)
+  final String? shopAddress;
+
+  @HiveField(22)
+  final String? shopPhone;
+
   OrderHiveModel({
     String? orderId,
     this.customerId,
@@ -72,6 +93,13 @@ class OrderHiveModel extends HiveObject {
     this.estimatedDeliveryTime,
     this.createdAt,
     this.updatedAt,
+    this.customerName,
+    this.customerAddress,
+    this.customerPhone,
+    this.vendorName,
+    this.shopName,
+    this.shopAddress,
+    this.shopPhone,
   }) : orderId = orderId ?? const Uuid().v4();
 
   factory OrderHiveModel.fromEntity(OrderEntity entity) {
@@ -92,6 +120,13 @@ class OrderHiveModel extends HiveObject {
       estimatedDeliveryTime: entity.estimatedDeliveryTime,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
+      customerName: entity.customerName,
+      customerAddress: entity.customerAddress,
+      customerPhone: entity.customerPhone,
+      vendorName: entity.vendorName,
+      shopName: entity.shopName,
+      shopAddress: entity.shopAddress,
+      shopPhone: entity.shopPhone,
     );
   }
 
@@ -113,6 +148,13 @@ class OrderHiveModel extends HiveObject {
       estimatedDeliveryTime: estimatedDeliveryTime,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      customerName: customerName,
+      customerAddress: customerAddress,
+      customerPhone: customerPhone,
+      vendorName: vendorName,
+      shopName: shopName,
+      shopAddress: shopAddress,
+      shopPhone: shopPhone,
     );
   }
 

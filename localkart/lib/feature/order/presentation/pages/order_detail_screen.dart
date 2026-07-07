@@ -10,6 +10,8 @@ class OrderDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mergedItems = _mergedItems(order);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -31,17 +33,25 @@ class OrderDetailScreen extends StatelessWidget {
           const SizedBox(height: 24),
           _buildInfoHeader(order),
           const SizedBox(height: 24),
-          _sectionHeader("Items (${order.items.length})"),
+          _sectionHeader("Items (${mergedItems.length})"),
           const SizedBox(height: 12),
-          ...order.items.map((item) => Padding(
+          ...mergedItems.map((item) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: _buildOrderItem(item),
           )),
           const SizedBox(height: 24),
           _sectionHeader("Payment Summary"),
           const SizedBox(height: 12),
-          _buildPaymentSummary(order),
+          _buildPaymentSummary(order, mergedItems),
           const SizedBox(height: 24),
+          /// Vendor / Shop Info (shown when order is accepted)
+          if (order.shopName != null || order.vendorName != null) ...[
+            _sectionHeader("Vendor / Shop"),
+            const SizedBox(height: 12),
+            _buildVendorCard(order),
+            const SizedBox(height: 24),
+          ],
+
           _sectionHeader("Delivery Address"),
           const SizedBox(height: 12),
           _buildAddressCard(order),
@@ -208,8 +218,8 @@ class OrderDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentSummary(OrderEntity order) {
-    final subtotal = order.items.fold<int>(0, (sum, item) => sum + ((item.price ?? 0) * item.quantity));
+  Widget _buildPaymentSummary(OrderEntity order, List<OrderItemEntity> mergedItems) {
+    final subtotal = mergedItems.fold<int>(0, (sum, item) => sum + ((item.price ?? 0) * item.quantity));
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -238,6 +248,82 @@ class OrderDetailScreen extends StatelessWidget {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+  Widget _buildVendorCard(OrderEntity order) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.store_outlined, color: AppColors.success, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      order.shopName ?? order.vendorName ?? "Shop",
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Accepted your order",
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 20),
+          if (order.shopAddress != null && order.shopAddress!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.location_on_outlined, size: 16, color: AppColors.textSecondary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      order.shopAddress!,
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (order.shopPhone != null && order.shopPhone!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  const Icon(Icons.phone_outlined, size: 16, color: AppColors.textSecondary),
+                  const SizedBox(width: 8),
+                  Text(
+                    order.shopPhone!,
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -324,6 +410,23 @@ class OrderDetailScreen extends StatelessWidget {
       case "Cancelled": return AppColors.textSecondary;
       default: return AppColors.textSecondary;
     }
+  }
+
+  /// Merge items with the same productId and combine their quantities
+  List<OrderItemEntity> _mergedItems(OrderEntity order) {
+    final map = <String, OrderItemEntity>{};
+    for (final item in order.items) {
+      final key = item.productId;
+      if (map.containsKey(key)) {
+        final existing = map[key]!;
+        map[key] = existing.copyWith(
+          quantity: existing.quantity + item.quantity,
+        );
+      } else {
+        map[key] = item;
+      }
+    }
+    return map.values.toList();
   }
 
   String _shortId(String id) {

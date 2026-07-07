@@ -37,6 +37,13 @@ class OrderItemApiModel {
       productId = productRaw as String? ?? json['productId'] as String? ?? '';
     }
 
+    // Fallback: read productName and price from the top-level item JSON
+    // The order schema stores both directly on each item, so even if
+    // the product is deleted and populate() returns just the ObjectId string,
+    // the values are still available from when the order was created.
+    productName ??= json['productName'] as String?;
+    price ??= json['price'] as int?;
+
     return OrderItemApiModel(
       productId: productId,
       productName: productName,
@@ -92,6 +99,17 @@ class OrderApiModel {
   final String? createdAt;
   final String? updatedAt;
 
+  // Customer details (from populated customerId)
+  final String? customerName;
+  final String? customerAddress;
+  final String? customerPhone;
+
+  // Vendor/shop details (from populated shopId)
+  final String? vendorName;
+  final String? shopName;
+  final String? shopAddress;
+  final String? shopPhone;
+
   OrderApiModel({
     this.orderId,
     this.customerId,
@@ -109,23 +127,54 @@ class OrderApiModel {
     this.estimatedDeliveryTime,
     this.createdAt,
     this.updatedAt,
+    this.customerName,
+    this.customerAddress,
+    this.customerPhone,
+    this.vendorName,
+    this.shopName,
+    this.shopAddress,
+    this.shopPhone,
   });
 
   factory OrderApiModel.fromJson(Map<String, dynamic> json) {
     // customerId can be a populated object or plain string
     final customerRaw = json['customerId'];
-    final customerId = customerRaw is Map<String, dynamic>
-        ? (customerRaw['_id'] as String? ?? '')
-        : (customerRaw as String? ?? '');
+    String? customerId;
+    String? customerName;
+    String? customerAddress;
+    String? customerPhone;
+    if (customerRaw is Map<String, dynamic>) {
+      customerId = customerRaw['_id'] as String? ?? '';
+      customerName = customerRaw['name'] as String?;
+      customerAddress = customerRaw['address'] as String?;
+      customerPhone = customerRaw['phone'] as String?;
+    } else {
+      customerId = customerRaw as String? ?? '';
+    }
 
     // shopId can be a populated object or plain string or null
     final shopRaw = json['shopId'];
     String? shopId;
+    String? vendorName;
     if (shopRaw is Map<String, dynamic>) {
       shopId = shopRaw['_id'] as String?;
+      vendorName = shopRaw['name'] as String?;
     } else {
       shopId = shopRaw as String?;
     }
+
+    // Parse shopDetails object (added by backend controller)
+    String? shopName;
+    String? shopAddress;
+    final shopDetailsRaw = json['shopDetails'];
+    if (shopDetailsRaw is Map<String, dynamic>) {
+      shopName = shopDetailsRaw['shopName'] as String?;
+      shopAddress = shopDetailsRaw['address'] as String?;
+    }
+    // Get shop phone from the populated shopId User object
+    final shopPhone = shopRaw is Map<String, dynamic>
+        ? (shopRaw['phone'] as String?)
+        : null;
 
     // Parse structured deliveryAddress object
     final deliveryRaw = json['deliveryAddress'];
@@ -162,6 +211,13 @@ class OrderApiModel {
       estimatedDeliveryTime: json['estimatedDeliveryTime'] as int?,
       createdAt: json['createdAt'] as String?,
       updatedAt: json['updatedAt'] as String?,
+      customerName: customerName,
+      customerAddress: customerAddress,
+      customerPhone: customerPhone,
+      vendorName: vendorName,
+      shopName: shopName,
+      shopAddress: shopAddress,
+      shopPhone: shopPhone,
     );
   }
 
@@ -192,6 +248,13 @@ class OrderApiModel {
       estimatedDeliveryTime: estimatedDeliveryTime,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      customerName: customerName,
+      customerAddress: customerAddress,
+      customerPhone: customerPhone,
+      vendorName: vendorName,
+      shopName: shopName,
+      shopAddress: shopAddress,
+      shopPhone: shopPhone,
     );
   }
 
@@ -217,6 +280,13 @@ class OrderApiModel {
       estimatedDeliveryTime: estimatedDeliveryTime,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      customerName: customerName,
+      customerAddress: customerAddress,
+      customerPhone: customerPhone,
+      vendorName: vendorName,
+      shopName: shopName,
+      shopAddress: shopAddress,
+      shopPhone: shopPhone,
     );
   }
 }

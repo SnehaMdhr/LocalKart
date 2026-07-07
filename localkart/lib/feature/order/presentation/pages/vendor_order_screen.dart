@@ -27,14 +27,13 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(orderViewModelProvider.notifier).loadAllShopData();
+      ref.read(orderViewModelProvider.notifier).getShopOrders();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final orderState = ref.watch(orderViewModelProvider);
-    final pendingOrders = orderState.pendingOrders ?? [];
     final activeOrders = (orderState.orders ?? [])
         .where((o) => ["Accepted", "Preparing", "Out for Delivery"]
             .contains(o.status))
@@ -48,7 +47,6 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
       backgroundColor: AppColors.background,
       body: _buildBody(
         orderState,
-        pendingOrders,
         activeOrders,
         completedOrders,
       ),
@@ -57,12 +55,10 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
 
   Widget _buildBody(
     OrderState orderState,
-    List<OrderEntity> pending,
     List<OrderEntity> active,
     List<OrderEntity> completed,
   ) {
     if (orderState.status == OrderStatus.loading &&
-        pending.isEmpty &&
         (orderState.orders ?? []).isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
@@ -70,7 +66,6 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
     }
 
     if (orderState.status == OrderStatus.error &&
-        pending.isEmpty &&
         (orderState.orders ?? []).isEmpty) {
       return Center(
         child: Column(
@@ -108,7 +103,7 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
       );
     }
 
-    if (pending.isEmpty && active.isEmpty && completed.isEmpty) {
+    if (active.isEmpty && completed.isEmpty) {
       return const Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -135,24 +130,13 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
 
     return RefreshIndicator(
       onRefresh: () =>
-          ref.read(orderViewModelProvider.notifier).loadAllShopData(),
+          ref.read(orderViewModelProvider.notifier).getShopOrders(),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           /// Stats summary
-          _buildStatsRow(pending.length, active.length, completed.length),
+          _buildStatsRow(active.length, completed.length),
           const SizedBox(height: 20),
-
-          /// Pending Orders (from /shop/pending)
-          if (pending.isNotEmpty) ...[
-            _sectionHeader("New Orders", pending.length, AppColors.warning),
-            const SizedBox(height: 12),
-            ...pending.map((order) => Padding(
-                  padding: const EdgeInsets.only(bottom: 14),
-                  child: _buildOrderCard(order, isPending: true),
-                )),
-            const SizedBox(height: 8),
-          ],
 
           /// Active Orders (from /shop/orders - Accepted, Preparing, Out for Delivery)
           if (active.isNotEmpty) ...[
@@ -160,7 +144,7 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
             const SizedBox(height: 12),
             ...active.map((order) => Padding(
                   padding: const EdgeInsets.only(bottom: 14),
-                  child: _buildOrderCard(order, isPending: false),
+                  child: _buildOrderCard(order),
                 )),
             const SizedBox(height: 8),
           ],
@@ -179,16 +163,9 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
     );
   }
 
-  Widget _buildStatsRow(int pending, int active, int completed) {
+  Widget _buildStatsRow(int active, int completed) {
     return Row(
       children: [
-        _statChip(
-          "New",
-          pending,
-          AppColors.warning,
-          AppColors.warning.withValues(alpha: 0.15),
-        ),
-        const SizedBox(width: 10),
         _statChip(
           "Active",
           active,
@@ -265,7 +242,7 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
     );
   }
 
-  Widget _buildOrderCard(OrderEntity order, {required bool isPending}) {
+  Widget _buildOrderCard(OrderEntity order) {
     final itemCount = order.items.length;
     final displayId = order.orderNumber ??
         ((order.orderId ?? '').length >= 6
@@ -276,12 +253,7 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isPending
-              ? AppColors.warning.withValues(alpha: 0.3)
-              : AppColors.divider,
-          width: isPending ? 1.5 : 1,
-        ),
+        border: Border.all(color: AppColors.divider),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -302,14 +274,12 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: isPending
-                        ? AppColors.warning.withValues(alpha: 0.15)
-                        : AppColors.primaryExtraLight,
+                    color: AppColors.primaryExtraLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.receipt_long,
-                    color: isPending ? AppColors.warning : AppColors.primary,
+                    color: AppColors.primary,
                     size: 22,
                   ),
                 ),
@@ -444,9 +414,7 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
           const SizedBox(height: 14),
 
           /// Action buttons
-          if (isPending)
-            _buildPendingActions(order)
-          else if (order.status == "Accepted")
+          if (order.status == "Accepted")
             _buildStatusActions(order, ["Preparing", "Rejected"])
           else if (order.status == "Preparing")
             _buildStatusActions(order, ["Out for Delivery"])
@@ -459,67 +427,6 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
     );
   }
 
-  Widget _buildPendingActions(OrderEntity order) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-      child: Row(
-        children: [
-          /// View Details
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _viewOrder(order),
-              icon: const Icon(Icons.visibility, size: 18),
-              label: const Text("View", style: TextStyle(fontSize: 13)),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textSecondary,
-                side: const BorderSide(color: AppColors.divider),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-
-          /// Reject
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _confirmReject(order),
-              icon: const Icon(Icons.close, size: 18),
-              label: const Text("Reject", style: TextStyle(fontSize: 13)),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.error,
-                side: const BorderSide(color: AppColors.error),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-
-          /// Accept
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () => _acceptOrder(order),
-              icon: const Icon(Icons.check, size: 18),
-              label: const Text("Accept", style: TextStyle(fontSize: 13)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildStatusActions(
     OrderEntity order,
@@ -704,27 +611,6 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
     );
   }
 
-  Future<void> _acceptOrder(OrderEntity order) async {
-    final orderId = order.orderId;
-    if (orderId == null) return;
-
-    await ref
-        .read(orderViewModelProvider.notifier)
-        .acceptOrder(orderId);
-    if (!mounted) return;
-
-    // Refresh both pending and active lists
-    ref.read(orderViewModelProvider.notifier).loadAllShopData();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Order accepted successfully"),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   Future<void> _confirmReject(OrderEntity order) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -768,7 +654,7 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
       if (!mounted) return;
 
       // Refresh to remove rejected order from list
-      ref.read(orderViewModelProvider.notifier).loadAllShopData();
+      ref.read(orderViewModelProvider.notifier).getShopOrders();
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

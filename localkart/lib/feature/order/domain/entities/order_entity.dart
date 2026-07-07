@@ -53,6 +53,17 @@ class OrderEntity extends Equatable {
   final String? createdAt;
   final String? updatedAt;
 
+  // Customer details (from populated customerId)
+  final String? customerName;
+  final String? customerAddress;
+  final String? customerPhone;
+
+  // Vendor/shop details (from populated shopId)
+  final String? vendorName;
+  final String? shopName;
+  final String? shopAddress;
+  final String? shopPhone;
+
   const OrderEntity({
     this.orderId,
     this.customerId,
@@ -70,6 +81,13 @@ class OrderEntity extends Equatable {
     this.estimatedDeliveryTime,
     this.createdAt,
     this.updatedAt,
+    this.customerName,
+    this.customerAddress,
+    this.customerPhone,
+    this.vendorName,
+    this.shopName,
+    this.shopAddress,
+    this.shopPhone,
   });
 
   OrderEntity copyWith({
@@ -89,6 +107,13 @@ class OrderEntity extends Equatable {
     int? estimatedDeliveryTime,
     String? createdAt,
     String? updatedAt,
+    String? customerName,
+    String? customerAddress,
+    String? customerPhone,
+    String? vendorName,
+    String? shopName,
+    String? shopAddress,
+    String? shopPhone,
   }) {
     return OrderEntity(
       orderId: orderId ?? this.orderId,
@@ -107,6 +132,13 @@ class OrderEntity extends Equatable {
       estimatedDeliveryTime: estimatedDeliveryTime ?? this.estimatedDeliveryTime,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      customerName: customerName ?? this.customerName,
+      customerAddress: customerAddress ?? this.customerAddress,
+      customerPhone: customerPhone ?? this.customerPhone,
+      vendorName: vendorName ?? this.vendorName,
+      shopName: shopName ?? this.shopName,
+      shopAddress: shopAddress ?? this.shopAddress,
+      shopPhone: shopPhone ?? this.shopPhone,
     );
   }
 
@@ -128,5 +160,12 @@ class OrderEntity extends Equatable {
     estimatedDeliveryTime,
     createdAt,
     updatedAt,
+    customerName,
+    customerAddress,
+    customerPhone,
+    vendorName,
+    shopName,
+    shopAddress,
+    shopPhone,
   ];
 }

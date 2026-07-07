@@ -22,6 +22,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
     final orderState = ref.watch(orderViewModelProvider);
     // Use the latest order from state if available, otherwise the initial one
     final order = orderState.currentOrder ?? widget.order;
+    final mergedItems = _mergedItems(order);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -51,13 +52,13 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
           /// Customer Info
           _sectionHeader("Customer & Delivery"),
           const SizedBox(height: 12),
-          _buildDeliveryCard(order),
+          _buildCustomerCard(order),
           const SizedBox(height: 24),
 
           /// Items
-          _sectionHeader("Items (${order.items.length})"),
+          _sectionHeader("Items (${mergedItems.length})"),
           const SizedBox(height: 12),
-          ...order.items.map((item) => Padding(
+          ...mergedItems.map((item) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: _buildOrderItem(item),
           )),
@@ -66,7 +67,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
           /// Payment Summary
           _sectionHeader("Payment Summary"),
           const SizedBox(height: 12),
-          _buildPaymentSummary(order),
+          _buildPaymentSummary(order, mergedItems),
           const SizedBox(height: 30),
 
           /// Order ID
@@ -403,7 +404,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
     );
   }
 
-  Widget _buildDeliveryCard(OrderEntity order) {
+  Widget _buildCustomerCard(OrderEntity order) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -413,6 +414,88 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
       ),
       child: Column(
         children: [
+          /// Customer Info
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryExtraLight,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.person_outline, color: AppColors.primary, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Customer", style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    const SizedBox(height: 2),
+                    Text(
+                      order.customerName ?? "Customer",
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColors.textPrimary),
+                    ),
+                    if (order.customerAddress != null && order.customerAddress!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              order.customerAddress!,
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (order.customerPhone != null && order.customerPhone!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.phone_outlined, size: 14, color: AppColors.textSecondary),
+                          const SizedBox(width: 4),
+                          Text(
+                            order.customerPhone!,
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (order.customerNote != null && order.customerNote!.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.notes, size: 14, color: AppColors.warning),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                order.customerNote!,
+                                style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontStyle: FontStyle.italic),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 24),
+
           /// Payment Method
           Row(
             children: [
@@ -489,6 +572,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
     );
   }
 
+
   Widget _buildOrderItem(OrderItemEntity item) {
     final imageUrl = item.imageUrl;
     final fullUrl = (imageUrl != null && imageUrl.trim().isNotEmpty)
@@ -533,8 +617,8 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
     );
   }
 
-  Widget _buildPaymentSummary(OrderEntity order) {
-    final subtotal = order.items.fold<int>(0, (sum, item) => sum + ((item.price ?? 0) * item.quantity));
+  Widget _buildPaymentSummary(OrderEntity order, List<OrderItemEntity> mergedItems) {
+    final subtotal = mergedItems.fold<int>(0, (sum, item) => sum + ((item.price ?? 0) * item.quantity));
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -701,6 +785,23 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
       case "Cancelled": return const Color(0xFFF3E5F5);
       default: return AppColors.inputFill;
     }
+  }
+
+  /// Merge items with the same productId and combine their quantities
+  List<OrderItemEntity> _mergedItems(OrderEntity order) {
+    final map = <String, OrderItemEntity>{};
+    for (final item in order.items) {
+      final key = item.productId;
+      if (map.containsKey(key)) {
+        final existing = map[key]!;
+        map[key] = existing.copyWith(
+          quantity: existing.quantity + item.quantity,
+        );
+      } else {
+        map[key] = item;
+      }
+    }
+    return map.values.toList();
   }
 
   String _formatDate(String dateStr) {

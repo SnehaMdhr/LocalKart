@@ -31,6 +31,16 @@ const ShopSchema: Schema = new Schema<ShopType>(
       required: false,
     },
 
+    latitude: {
+      type: Number,
+      required: false,
+    },
+
+    longitude: {
+      type: Number,
+      required: false,
+    },
+
     categories: {
       type: [String],
       enum: [

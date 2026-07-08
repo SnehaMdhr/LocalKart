@@ -9,6 +9,8 @@ class ShopEntity extends Equatable {
   final List<String> categories;
   final String? imageUrl;
   final String? status;
+  final double? latitude;
+  final double? longitude;
 
   const ShopEntity({
     this.shopId,
@@ -19,6 +21,8 @@ class ShopEntity extends Equatable {
     required this.categories,
     this.imageUrl,
     this.status,
+    this.latitude,
+    this.longitude,
   });
 
   @override
@@ -31,5 +35,7 @@ class ShopEntity extends Equatable {
         categories,
         imageUrl,
         status,
+        latitude,
+        longitude,
       ];
 }

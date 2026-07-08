@@ -12,16 +12,20 @@ class UpdateShopUsecaseParams extends Equatable {
   final String address;
   final String description;
   final List<String> categories;
+  final double? latitude;
+  final double? longitude;
 
   const UpdateShopUsecaseParams({
     required this.shopName,
     required this.address,
     required this.description,
     required this.categories,
+    this.latitude,
+    this.longitude,
   });
 
   @override
-  List<Object?> get props => [shopName, address, description, categories];
+  List<Object?> get props => [shopName, address, description, categories, latitude, longitude];
 }
 
 final updateShopUsecaseProvider = Provider<UpdateShopUsecase>((ref) {
@@ -42,6 +46,8 @@ class UpdateShopUsecase implements UseCaseWithParams<ShopEntity?, UpdateShopUsec
       address: params.address,
       description: params.description,
       categories: params.categories,
+      latitude: params.latitude,
+      longitude: params.longitude,
     );
     return _shopRepository.updateShop(entity);
   }

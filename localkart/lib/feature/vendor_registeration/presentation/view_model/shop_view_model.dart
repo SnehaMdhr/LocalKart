@@ -47,6 +47,8 @@ class ShopViewModel extends Notifier<ShopState> {
     required String address,
     required String description,
     required List<String> categories,
+    double? latitude,
+    double? longitude,
   }) async {
     state = state.copyWith(status: ShopStatus.loading);
 
@@ -55,6 +57,8 @@ class ShopViewModel extends Notifier<ShopState> {
       address: address,
       description: description,
       categories: categories,
+      latitude: latitude,
+      longitude: longitude,
     );
 
     final result = await _registerShopUsecase(params);
@@ -79,6 +83,8 @@ class ShopViewModel extends Notifier<ShopState> {
     required String address,
     required String description,
     required List<String> categories,
+    double? latitude,
+    double? longitude,
   }) async {
     state = state.copyWith(status: ShopStatus.loading);
 
@@ -87,6 +93,8 @@ class ShopViewModel extends Notifier<ShopState> {
       address: address,
       description: description,
       categories: categories,
+      latitude: latitude,
+      longitude: longitude,
     );
 
     final result = await _updateShopUsecase(params);

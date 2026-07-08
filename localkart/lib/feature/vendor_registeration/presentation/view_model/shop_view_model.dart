@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:localkart/feature/vendor_registeration/domain/usecases/get_my_shop_usecase.dart';
 import 'package:localkart/feature/vendor_registeration/domain/usecases/register_shop_usecase.dart';
 import 'package:localkart/feature/vendor_registeration/presentation/states/shop_state.dart';
 
@@ -8,11 +9,34 @@ final shopViewModelProvider = NotifierProvider<ShopViewModel, ShopState>(
 
 class ShopViewModel extends Notifier<ShopState> {
   late final RegisterShopUsecase _registerShopUsecase;
+  late final GetMyShopUsecase _getMyShopUsecase;
 
   @override
   ShopState build() {
     _registerShopUsecase = ref.read(registerShopUsecaseProvider);
-    return ShopState();
+    _getMyShopUsecase = ref.read(getMyShopUsecaseProvider);
+    return const ShopState();
+  }
+
+  Future<void> getMyShop() async {
+    state = state.copyWith(status: ShopStatus.loading);
+    final result = await _getMyShopUsecase();
+
+    result.fold(
+      (failure) {
+        state = state.copyWith(
+          status: ShopStatus.error,
+          errorMessage: failure.message,
+        );
+      },
+      (shop) {
+        state = state.copyWith(
+          status: ShopStatus.loaded,
+          shopEntity: shop,
+          errorMessage: null,
+        );
+      },
+    );
   }
 
   Future<void> registerShop({

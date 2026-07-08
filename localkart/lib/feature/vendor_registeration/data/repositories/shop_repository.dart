@@ -65,4 +65,25 @@ class ShopRepository implements IShopRepository {
       }
     }
   }
+
+  @override
+  Future<Either<Failure, ShopEntity?>> getMyShop() async {
+    if (await _networkInfo.isConnected) {
+      try {
+        final shop = await _shopRemoteDatasource.getMyShop();
+        return Right(shop?.toEntity());
+      } on DioException catch (e) {
+        return left(
+          ApiFailure(
+            message: e.response?.data["message"] ?? "Failed to fetch shop",
+            statusCode: e.response?.statusCode,
+          ),
+        );
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    } else {
+      return Left(LocalDatabaseFailure(message: "No internet connection"));
+    }
+  }
 }

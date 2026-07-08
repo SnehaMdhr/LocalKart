@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/widgets/title_app_bar.dart';
+import 'package:localkart/feature/auth/presentation/pages/vendor_dashboard.dart';
 import 'package:localkart/feature/order/presentation/pages/vendor_order_screen.dart';
-import 'package:localkart/feature/product/presentation/pages/home_screen.dart';
 import 'package:localkart/feature/profile/presentation/pages/profile_screen.dart';
 
 class BottomNavigationBarForVendor extends ConsumerStatefulWidget {
@@ -19,7 +19,7 @@ class _BottomNavigationBarForVendorState
   int _selectedIndex = 0;
 
   final List<Widget> screens = const [
-    HomeScreen(),
+    VendorDashboard(),
     VendorOrderScreen(),
     ProfileScreen(),
   ];

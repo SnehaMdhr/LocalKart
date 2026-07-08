@@ -5,10 +5,12 @@ import { HttpError } from "../errors/https-error";
 import { JWT_SECRET } from "../config";
 import { deleteUploadIfExists } from "../middlewares/upload.middleware";
 import { sendEmail } from "../config/email";
+import { OAuth2Client } from "google-auth-library";
 import { UserRepository } from "../repositories/user.repository";
 
 
 let userRepository = new UserRepository();
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export class UserService {
   async createUser(data: CreateUserDto) {
@@ -220,4 +222,42 @@ async getAllUsers(page?: string, size?: string, search?: string) {
     return { message: "Password reset successful" };
   }
 
+  async googleLogin(token: string) {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+
+    if (!payload?.email) {
+      throw new HttpError(400, "Invalid Google token");
+    }
+
+    const { email, name, picture } = payload;
+
+    let user = await userRepository.getUserByEmail(email);
+
+    if (!user) {
+      user = await userRepository.createUser({
+        email,
+        name,
+        authProvider: "google",
+        role: "Customer",
+        phone: "",
+        imageUrl: picture,
+      });
+    }
+
+    const payloadJwt = {
+      id: user._id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    };
+
+    const jwtToken = jwt.sign(payloadJwt, JWT_SECRET, { expiresIn: "30d" });
+
+    return { token: jwtToken, user };
+  }
 }

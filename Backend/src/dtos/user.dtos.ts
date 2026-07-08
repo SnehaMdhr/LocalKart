@@ -59,4 +59,8 @@ export const ResetPasswordDTO = z.object({
 
 export type ResetPasswordDTO = z.infer<typeof ResetPasswordDTO>;
 
+export const GoogleLoginDTO = z.object({
+    token: z.string().min(10)
+});
 
+export type GoogleLoginDTO = z.infer<typeof GoogleLoginDTO>;

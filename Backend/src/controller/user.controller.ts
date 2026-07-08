@@ -4,6 +4,7 @@ import { UserService } from "../services/user.service";
 import {
   ChangePasswordDTO,
   CreateUserDto,
+  GoogleLoginDTO,
   LoginUserDTO,
   ResetPasswordDTO,
   UpdateUserDTO,
@@ -27,20 +28,16 @@ export class AuthController {
       }
       const userData: CreateUserDto = parsedData.data;
       const newUser = await userService.createUser(userData);
-      return res
-        .status(201)
-        .json({
-          success: true,
-          message: "Registration Successful",
-          data: newUser,
-        });
+      return res.status(201).json({
+        success: true,
+        message: "Registration Successful",
+        data: newUser,
+      });
     } catch (error: Error | any) {
-      return res
-        .status(error.statusCode ?? 500)
-        .json({
-          success: false,
-          message: error.message || "Internal Server Error",
-        });
+      return res.status(error.statusCode ?? 500).json({
+        success: false,
+        message: error.message || "Internal Server Error",
+      });
     }
   }
   async login(req: Request, res: Response) {
@@ -53,21 +50,17 @@ export class AuthController {
       }
       const loginData: LoginUserDTO = parsedData.data;
       const { token, user } = await userService.loginUser(loginData);
-      return res
-        .status(200)
-        .json({
-          success: true,
-          messaage: "Login successful",
-          data: user,
-          token,
-        });
+      return res.status(200).json({
+        success: true,
+        messaage: "Login successful",
+        data: user,
+        token,
+      });
     } catch (error: Error | any) {
-      return res
-        .status(error.statusCode ?? 500)
-        .json({
-          success: false,
-          message: error.message || "Internal Server Error",
-        });
+      return res.status(error.statusCode ?? 500).json({
+        success: false,
+        message: error.message || "Internal Server Error",
+      });
     }
   }
 
@@ -81,20 +74,16 @@ export class AuthController {
           .json({ success: false, message: "User Id not provided" });
       }
       const user = await userService.getUserById(userId);
-      return res
-        .status(200)
-        .json({
-          success: true,
-          message: "user fetched successfully",
-          data: user,
-        });
+      return res.status(200).json({
+        success: true,
+        message: "user fetched successfully",
+        data: user,
+      });
     } catch (error: Error | any) {
-      return res
-        .status(error.statusCode ?? 500)
-        .json({
-          success: false,
-          message: error.message || "internal Server error",
-        });
+      return res.status(error.statusCode ?? 500).json({
+        success: false,
+        message: error.message || "internal Server error",
+      });
     }
   }
 
@@ -117,20 +106,16 @@ export class AuthController {
         parsedData.data.imageUrl = `/uploads/${req.file.filename}`;
       }
       const updatedUser = await userService.updateUser(userId, parsedData.data);
-      return res
-        .status(200)
-        .json({
-          success: true,
-          message: "User updated successfully",
-          data: updatedUser,
-        });
+      return res.status(200).json({
+        success: true,
+        message: "User updated successfully",
+        data: updatedUser,
+      });
     } catch (error: Error | any) {
-      return res
-        .status(error.statusCode ?? 500)
-        .json({
-          success: false,
-          message: error.message || "Internal Server Error",
-        });
+      return res.status(error.statusCode ?? 500).json({
+        success: false,
+        message: error.message || "Internal Server Error",
+      });
     }
   }
 
@@ -140,12 +125,10 @@ export class AuthController {
       const user = await userService.getOneUser(userId);
       return res.status(200).json({ success: true, data: user });
     } catch (error: Error | any) {
-      return res
-        .status(error.statusCode ?? 500)
-        .json({
-          success: false,
-          message: error.message || "Internal Server Error",
-        });
+      return res.status(error.statusCode ?? 500).json({
+        success: false,
+        message: error.message || "Internal Server Error",
+      });
     }
   }
 
@@ -282,6 +265,35 @@ export class AuthController {
       return res.status(200).json({
         success: true,
         message: "Password has been reset successfully.",
+      });
+    } catch (error: Error | any) {
+      return res.status(error.statusCode ?? 500).json({
+        success: false,
+        message: error.message || "Internal Server Error",
+      });
+    }
+  }
+
+  async googleLogin(req: Request, res: Response) {
+    try {
+      const parsedData = GoogleLoginDTO.safeParse(req.body);
+
+      if (!parsedData.success) {
+        return res.status(400).json({
+          success: false,
+          message: z.prettifyError(parsedData.error),
+        });
+      }
+
+      const { token } = parsedData.data;
+
+      const result = await userService.googleLogin(token);
+
+      return res.status(200).json({
+        success: true,
+        message: "Google login successful",
+        data: result.user,
+        token: result.token,
       });
     } catch (error: Error | any) {
       return res.status(error.statusCode ?? 500).json({

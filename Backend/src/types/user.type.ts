@@ -3,6 +3,7 @@ import z from "zod";
 export const userSchema = z.object({
     email: z.email().min(5),
     password: z.string().min(8).optional(),
+    authProvider: z.enum(["local", "google", "github"]).default("local"),
     name: z.string().optional(),
     phone: z.string().optional(),
     role: z.enum(["Customer","Shopkeeper", "admin"]).default("Customer"),

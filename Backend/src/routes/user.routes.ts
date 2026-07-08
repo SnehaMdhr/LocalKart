@@ -15,6 +15,7 @@ router.delete("/delete-profile",authorizedMiddleware, authController.deleteUser)
 router.post("/change-password",authorizedMiddleware,authController.changePassword);
 router.post("/request-password-reset", authController.requestPasswordResetOTP);
 router.post("/reset-password", authController.resetPasswordOTP);
+router.post("/google-login", authController.googleLogin);
 
 
 router.get("/", authorizedMiddleware, adminOnlyMiddleware, authController.getAllUsers);

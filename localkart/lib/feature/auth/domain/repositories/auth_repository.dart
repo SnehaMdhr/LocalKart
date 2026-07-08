@@ -14,4 +14,5 @@ abstract interface class IAuthRepository {
     required String newPassword,
     required String confirmPassword,
   });
+  Future<Either<Failure, AuthEntity>> loginWithGoogle(String idToken);
 }

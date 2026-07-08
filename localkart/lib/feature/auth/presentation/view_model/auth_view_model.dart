@@ -1,5 +1,9 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:localkart/core/config/oauth_config.dart';
 import 'package:localkart/core/services/storage/token_service.dart';
+import 'package:localkart/feature/auth/data/repositories/auth_repository.dart';
 import 'package:localkart/feature/auth/domain/usecases/get_current_user_usecase.dart';
 import 'package:localkart/feature/auth/domain/usecases/logout_usecase.dart';
 import 'package:localkart/feature/auth/domain/usecases/request_password_reset_usecase.dart';
@@ -20,6 +24,12 @@ class AuthViewModel extends Notifier<AuthState> {
   late final RequestPasswordResetUsecase _requestPasswordResetUsecase;
   late final ResetPasswordUsecase _resetPasswordUsecase;
 
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+    serverClientId: OAuthConfig.googleServerClientId,
+  );
+
+  
   @override
   AuthState build() {
     _registerUsecase = ref.read(registerUsecaseProvider);
@@ -167,5 +177,78 @@ class AuthViewModel extends Notifier<AuthState> {
         state = state.copyWith(status: AuthStatus.passwordReset);
       },
     );
+  }
+
+  Future<void> loginWithGoogle() async {
+    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+    try {
+      final googleUser = await _googleSignIn.signIn();
+
+      if (googleUser == null) {
+        state = state.copyWith(status: AuthStatus.unauthenticated);
+        return;
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        state = state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: 'Google sign-in failed: missing id token.',
+        );
+        return;
+      }
+
+      final result = await ref
+          .read(authRepositoryProvider)
+          .loginWithGoogle(idToken);
+
+      result.fold(
+        (failure) {
+          state = state.copyWith(
+            status: AuthStatus.error,
+            errorMessage: failure.message,
+          );
+        },
+        (user) {
+          state = state.copyWith(
+            status: AuthStatus.authenticated,
+            authEntity: user,
+            errorMessage: null,
+          );
+        },
+      );
+    } on PlatformException catch (e) {
+      final lowerCode = e.code.toLowerCase();
+      final lowerMessage = (e.message ?? '').toLowerCase();
+      final lowerDetails = (e.details?.toString() ?? '').toLowerCase();
+      final isOAuthConfigIssue =
+          lowerCode.contains('sign_in_failed') ||
+          lowerMessage.contains('apiexception: 10') ||
+          lowerMessage.contains('api exception: 10') ||
+          lowerMessage.contains('apiexception') ||
+          lowerDetails.contains('apiexception: 10') ||
+          lowerDetails.contains('api exception: 10') ||
+          lowerDetails.contains('apiexception') ||
+          lowerMessage.contains('developer error') ||
+          lowerDetails.contains('developer error') ||
+          lowerMessage.contains('12500');
+
+      final baseMessage = isOAuthConfigIssue
+          ? 'Google sign-in failed: Android OAuth is not configured correctly. Verify package name and SHA-1/SHA-256 in Google Cloud.'
+          : 'Google sign-in failed (${e.code}).';
+
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage:
+            '$baseMessage ${e.message != null ? 'Details: ${e.message}' : ''} ${e.details != null ? 'Extra: ${e.details}' : ''}',
+      );
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Google sign-in failed. Please try again. Details: $e',
+      );
+    }
   }
 }

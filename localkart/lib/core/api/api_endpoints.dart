@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 
 class ApiEndpoints {
   ApiEndpoints._();
-  static const bool isPhysicalDevice = false;
-  static const String compIpAddress = "192.168.32.231";
+  static const bool isPhysicalDevice = true;
+  static const String compIpAddress = "10.197.20.231";
   static String get baseUrl {
     if (isPhysicalDevice) {
       return "http://$compIpAddress:3000/api";
@@ -43,6 +43,7 @@ class ApiEndpoints {
   static String changePassword = "/auth/change-password";
   static String requestPasswordReset = "/auth/request-password-reset";
   static String resetPassword = "/auth/reset-password";
+  static const String googleLogin = "/auth/google-login";
 
   // ============ Shop Endpoints ============
   static const String registerShop = "/shop/register-shop";

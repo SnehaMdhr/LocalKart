@@ -23,4 +23,5 @@ abstract interface class IAuthRemoteDatasource {
     required String newPassword,
     required String confirmPassword,
   });
+  Future<AuthApiModel?> loginWithGoogle(String idToken);
 }

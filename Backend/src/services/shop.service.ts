@@ -4,8 +4,9 @@ import { CreateShopDto, UpdateShopDto } from "../dtos/shop.dtos";
 import { HttpError } from "../errors/https-error";
 import { IShop } from "../model/shop.model";
 import { ShopRepository } from "../repositories/shop.repository";
-import { UserRepository } from "../repositories/user.repository";
+
 import { deleteUploadIfExists } from "../middlewares/upload.middleware";
+import { UserRepository } from "../repositories/user.repository";
 
 const shopRepository = new ShopRepository();
 const userRepository = new UserRepository();

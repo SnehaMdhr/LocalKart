@@ -10,6 +10,8 @@ const UserSchema: Schema = new Schema<UserType>(
         imageUrl: { type: String, required: false },
         phone: { type: String, required: false },
         address: { type: String, required: false },
+        otp: { type: String },
+        resetOtpExpiry: { type: Date },
     },
     { timestamps: true } 
 );

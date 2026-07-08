@@ -9,6 +9,8 @@ export const userSchema = z.object({
     imageUrl: z.string().optional(),
     address: z.string().optional(),
     newPassword: z.string().min(8).optional(),
+    resetOtpExpiry: z.date().optional(),
+    otp: z.string().length(6).optional(),
 });
 
 export type UserType = z.infer<typeof userSchema>;

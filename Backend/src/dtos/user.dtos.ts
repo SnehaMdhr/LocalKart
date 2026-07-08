@@ -44,4 +44,19 @@ export const ChangePasswordDTO = z.object({
 
 export type ChangePasswordDTO = z.infer<typeof ChangePasswordDTO>;
 
+export const ResetPasswordDTO = z.object({
+    email: z.string().email(),
+    otp: z.string().length(6),
+    newPassword: z.string().min(8),
+    confirmPassword: z.string().min(8),
+}).refine(
+    (data) => data.newPassword === data.confirmPassword,
+    {
+        message: "Passwords do not match",
+        path: ["confirmPassword"],
+    }
+);
+
+export type ResetPasswordDTO = z.infer<typeof ResetPasswordDTO>;
+
 

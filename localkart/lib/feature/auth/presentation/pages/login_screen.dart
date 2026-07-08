@@ -8,6 +8,7 @@ import 'package:localkart/core/widgets/bottom_navigation_bar_for_customer.dart';
 import 'package:localkart/core/widgets/bottom_navigation_bar_for_vendor.dart';
 import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/core/widgets/custom_text_field.dart';
+import 'package:localkart/feature/auth/presentation/pages/forget_password_screen.dart';
 import 'package:localkart/feature/auth/presentation/pages/register_screen.dart';
 import 'package:localkart/feature/auth/presentation/states/auth_state.dart';
 import 'package:localkart/feature/auth/presentation/view_model/auth_view_model.dart';
@@ -196,18 +197,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           Row(
                             mainAxisAlignment:
                                 MainAxisAlignment.spaceBetween,
-                            children: const [
-                              Text(
+                            children: [
+                              const Text(
                                 "Password",
                                 style: TextStyle(
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              Text(
-                                "Forgot?",
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w600,
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const ForgetPasswordScreen(),
+                                    ),
+                                  );
+                                },
+                                child: const Text(
+                                  "Forgot Password?",
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ],

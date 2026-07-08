@@ -5,4 +5,5 @@ import 'package:localkart/feature/vendor_registeration/domain/entities/shop_enti
 abstract interface class IShopRepository {
   Future<Either<Failure, bool>> registerShop(ShopEntity entity);
   Future<Either<Failure, ShopEntity?>> getMyShop();
+  Future<Either<Failure, ShopEntity?>> updateShop(ShopEntity entity);
 }

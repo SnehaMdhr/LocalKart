@@ -86,4 +86,26 @@ class ShopRepository implements IShopRepository {
       return Left(LocalDatabaseFailure(message: "No internet connection"));
     }
   }
+
+  @override
+  Future<Either<Failure, ShopEntity?>> updateShop(ShopEntity entity) async {
+    if (await _networkInfo.isConnected) {
+      try {
+        final apiModel = ShopApiModel.fromEntity(entity);
+        final updated = await _shopRemoteDatasource.updateShop(apiModel);
+        return Right(updated?.toEntity());
+      } on DioException catch (e) {
+        return left(
+          ApiFailure(
+            message: e.response?.data["message"] ?? "Failed to update shop",
+            statusCode: e.response?.statusCode,
+          ),
+        );
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    } else {
+      return Left(LocalDatabaseFailure(message: "No internet connection"));
+    }
+  }
 }

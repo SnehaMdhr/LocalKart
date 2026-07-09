@@ -73,7 +73,7 @@ const orderSchema = new Schema(
 
     paymentMethod: {
       type: String,
-      enum: ["Cash on Delivery", "eSewa"],
+      enum: ["Cash on Delivery", "eSewa(Pay on Delivery)", "Khalti(Pay on Delivery)"],
       required: true,
     },
 

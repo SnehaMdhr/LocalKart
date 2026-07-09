@@ -291,7 +291,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Widget _buildPaymentSelector() {
-    final methods = ["Cash on Delivery", "eSewa"];
+    final methods = ["Cash on Delivery", "eSewa(Pay on Delivery)", "Khalti(Pay on Delivery)"];
     return Container(
       decoration: BoxDecoration(
         color: AppColors.card,

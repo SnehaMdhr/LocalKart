@@ -30,7 +30,7 @@ export const orderSchema = z.object({
 
   totalAmount: z.number().nonnegative(),
 
-  paymentMethod: z.enum(["Cash on Delivery", "eSewa"]),
+  paymentMethod: z.enum(["Cash on Delivery", "eSewa(Pay on Delivery)", "Khalti(Pay on Delivery)"]),
 
   paymentStatus: z.enum([
     "Pending",

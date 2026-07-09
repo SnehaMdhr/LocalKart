@@ -186,4 +186,19 @@ class OrderRemoteDatasource implements IOrderRemoteDatasource {
       rethrow;
     }
   }
+
+  @override
+  Future<OrderApiModel?> markOrderPaid(String orderId) async {
+    try {
+      final path = '${ApiEndpoints.markOrderPaid}$orderId/mark-paid';
+      final response = await _apiClient.patch(path);
+
+      final responseData = response.data as Map<String, dynamic>?;
+      if (responseData == null) return null;
+
+      return OrderApiModel.fromJsonWithData(responseData);
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

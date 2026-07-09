@@ -291,4 +291,31 @@ class OrderRepository implements IOrderRepository {
       return Left(NetworkFailure());
     }
   }
+
+  @override
+  Future<Either<Failure, OrderEntity>> markOrderPaid(String orderId) async {
+    if (await _networkInfo.isConnected) {
+      try {
+        final result = await _remoteDatasource.markOrderPaid(orderId);
+
+        if (result == null) {
+          return Left(ApiFailure(message: "Failed to mark order as paid"));
+        }
+
+        return Right(result.toEntity());
+      } on DioException catch (e) {
+        return Left(
+          ApiFailure(
+            message: e.response?.data["message"] ??
+                "Failed to mark order as paid",
+            statusCode: e.response?.statusCode,
+          ),
+        );
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    } else {
+      return Left(NetworkFailure());
+    }
+  }
 }

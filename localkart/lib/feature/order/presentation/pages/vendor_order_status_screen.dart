@@ -539,6 +539,30 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
           ),
           const Divider(height: 24),
 
+          /// Mark as Paid — only for digital Pay on Delivery
+          if (_shouldShowMarkPaid(order)) ...[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isProcessing ? null : () => _markOrderPaid(order),
+                icon: _isProcessing
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.check_circle_outline, size: 18),
+                label: Text(
+                  _isProcessing ? "Confirming..." : "Mark as Paid",
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
           /// Delivery Address
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -756,6 +780,34 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
       SnackBar(
         content: Text("Status updated to $nextStatus"),
         backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  /// Whether to show the "Mark as Paid" button
+  bool _shouldShowMarkPaid(OrderEntity order) {
+    if (order.paymentStatus == "Paid") return false;
+    // Show for all Pay on Delivery methods
+    return order.paymentMethod == "Cash on Delivery" ||
+        order.paymentMethod == "eSewa(Pay on Delivery)" ||
+        order.paymentMethod == "Khalti(Pay on Delivery)";
+  }
+
+  /// Mark the order as paid
+  Future<void> _markOrderPaid(OrderEntity order) async {
+    final orderId = order.orderId;
+    if (orderId == null) return;
+
+    setState(() => _isProcessing = true);
+    await ref.read(orderViewModelProvider.notifier).markOrderPaid(orderId);
+    if (!mounted) return;
+    setState(() => _isProcessing = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Payment confirmed!"),
+        backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
       ),
     );

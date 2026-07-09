@@ -7,6 +7,7 @@ import 'package:localkart/feature/order/domain/usecases/get_order_by_id_usecase.
 import 'package:localkart/feature/order/domain/usecases/accept_order_usecase.dart';
 import 'package:localkart/feature/order/domain/usecases/reject_order_usecase.dart';
 import 'package:localkart/feature/order/domain/usecases/update_order_status_usecase.dart';
+import 'package:localkart/feature/order/domain/usecases/mark_order_paid_usecase.dart';
 import 'package:localkart/feature/order/domain/entities/order_entity.dart';
 import 'package:localkart/feature/order/presentation/states/order_state.dart';
 
@@ -22,6 +23,7 @@ class OrderViewModel extends Notifier<OrderState> {
   late final AcceptOrderUsecase _acceptOrderUsecase;
   late final RejectOrderUsecase _rejectOrderUsecase;
   late final UpdateOrderStatusUsecase _updateOrderStatusUsecase;
+  late final MarkOrderPaidUsecase _markOrderPaidUsecase;
 
   @override
   OrderState build() {
@@ -33,6 +35,7 @@ class OrderViewModel extends Notifier<OrderState> {
     _acceptOrderUsecase = ref.read(acceptOrderUsecaseProvider);
     _rejectOrderUsecase = ref.read(rejectOrderUsecaseProvider);
     _updateOrderStatusUsecase = ref.read(updateOrderStatusUsecaseProvider);
+    _markOrderPaidUsecase = ref.read(markOrderPaidUsecaseProvider);
 
     return const OrderState();
   }
@@ -249,6 +252,29 @@ class OrderViewModel extends Notifier<OrderState> {
       status: status,
     );
     final result = await _updateOrderStatusUsecase(params);
+
+    result.fold(
+      (failure) {
+        state = state.copyWith(
+          status: OrderStatus.error,
+          errorMessage: failure.message,
+        );
+      },
+      (order) {
+        _updateOrderInList(order);
+        state = state.copyWith(
+          status: OrderStatus.loaded,
+          currentOrder: order,
+          errorMessage: null,
+        );
+      },
+    );
+  }
+
+  Future<void> markOrderPaid(String orderId) async {
+    state = state.copyWith(status: OrderStatus.loading);
+    final params = MarkOrderPaidParams(orderId: orderId);
+    final result = await _markOrderPaidUsecase(params);
 
     result.fold(
       (failure) {

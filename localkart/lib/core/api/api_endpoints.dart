@@ -88,4 +88,5 @@ class ApiEndpoints {
   static const String rejectOrder = "/order/";
   static const String updateOrderStatus = "/order/";
   static const String deleteOrder = "/order/";
+  static const String markOrderPaid = "/order/";
 }

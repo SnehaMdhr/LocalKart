@@ -227,4 +227,25 @@ export class OrderController {
       });
     }
   }
+
+  async markOrderPaid(req: Request, res: Response) {
+    try {
+      const order = await orderService.markOrderPaid(
+        String(req.params.orderId)
+      );
+
+      const enriched = order.shopId ? await attachShopDetails(order) : order.toObject();
+
+      return res.status(200).json({
+        success: true,
+        message: "Payment confirmed successfully",
+        data: enriched,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode ?? 500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
 }

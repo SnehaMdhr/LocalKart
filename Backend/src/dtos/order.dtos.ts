@@ -35,3 +35,8 @@ export type UpdateOrderStatusDTO = z.infer<
 export const RejectOrderDTO = z.object({});
 
 export type RejectOrderDTO = z.infer<typeof RejectOrderDTO>;
+
+// Mark order as paid (no request body needed)
+export const MarkOrderPaidDTO = z.object({});
+
+export type MarkOrderPaidDTO = z.infer<typeof MarkOrderPaidDTO>;

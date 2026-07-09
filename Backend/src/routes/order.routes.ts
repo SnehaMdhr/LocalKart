@@ -66,6 +66,13 @@ router.patch(
   orderController.updateStatus
 );
 
+router.patch(
+  "/:orderId/mark-paid",
+  authorizedMiddleware,
+  shopkeeperOnlyMiddleware,
+  orderController.markOrderPaid
+);
+
 router.delete(
   "/:id",
   authorizedMiddleware,

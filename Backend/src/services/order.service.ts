@@ -160,4 +160,16 @@ export class OrderService {
       throw new HttpError(404, "Order not found");
     }
   }
+
+  async markOrderPaid(orderId: string): Promise<IOrder> {
+    const updated = await orderRepository.updateOrder(orderId, {
+      paymentStatus: "Paid",
+    });
+
+    if (!updated) {
+      throw new HttpError(404, "Order not found");
+    }
+
+    return updated;
+  }
 }

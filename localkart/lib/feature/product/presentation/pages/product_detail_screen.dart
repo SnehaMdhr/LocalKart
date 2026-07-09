@@ -821,19 +821,35 @@ class _CollectionPickerSheetState
                     .addProductToCollection(collectionId, widget.productId);
                 setState(() => _addingCollectionIds.remove(collectionId));
                 if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        "Added to \"${collection.collectionName}\"",
+                  final updatedState = ref.read(collectionViewModelProvider);
+                  if (updatedState.errorMessage != null) {
+                    // API call failed — show error without closing
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(updatedState.errorMessage!),
+                        backgroundColor: AppColors.error,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                      backgroundColor: AppColors.primary,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                    );
+                  } else {
+                    // Success — close sheet and show confirmation
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          "Added to \"${collection.collectionName}\"",
+                        ),
+                        backgroundColor: AppColors.primary,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  }
                 }
               },
         onDoubleTap: () => _showRenameDialog(context, ref, collection),

@@ -7,7 +7,6 @@ const collectionSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique: true,
     },
 
     collectionName: {

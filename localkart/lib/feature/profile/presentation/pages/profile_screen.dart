@@ -10,6 +10,8 @@ import 'package:localkart/core/widgets/custom_icon_button.dart';
 import 'package:localkart/core/widgets/custom_outlined_button.dart';
 import 'package:localkart/feature/address/presentation/pages/address_screen.dart';
 import 'package:localkart/feature/auth/presentation/pages/login_screen.dart';
+import 'package:localkart/feature/collection/presentation/pages/collection_screen.dart';
+import 'package:localkart/feature/order/presentation/pages/my_orders_screen.dart';
 import 'package:localkart/feature/auth/presentation/view_model/auth_view_model.dart';
 import 'package:localkart/feature/profile/presentation/pages/change_password_screen.dart';
 import 'package:localkart/feature/profile/presentation/pages/edit_profile_screen.dart';
@@ -240,6 +242,32 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => const AddressScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            _profileTile(
+              icon: Icons.receipt_long_outlined,
+              title: "My Orders",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MyOrdersScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            _profileTile(
+              icon: Icons.favorite_border,
+              title: "Saved Items",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const CollectionScreen(),
                   ),
                 );
               },

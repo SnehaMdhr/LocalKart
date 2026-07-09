@@ -27,13 +27,14 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(orderViewModelProvider.notifier).getShopOrders();
+      ref.read(orderViewModelProvider.notifier).loadAllShopData();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final orderState = ref.watch(orderViewModelProvider);
+    final pendingOrders = orderState.pendingOrders ?? [];
     final activeOrders = (orderState.orders ?? [])
         .where((o) => ["Accepted", "Preparing", "Out for Delivery"]
             .contains(o.status))
@@ -47,6 +48,7 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
       backgroundColor: AppColors.background,
       body: _buildBody(
         orderState,
+        pendingOrders,
         activeOrders,
         completedOrders,
       ),
@@ -55,18 +57,21 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
 
   Widget _buildBody(
     OrderState orderState,
+    List<OrderEntity> pending,
     List<OrderEntity> active,
     List<OrderEntity> completed,
   ) {
     if (orderState.status == OrderStatus.loading &&
-        (orderState.orders ?? []).isEmpty) {
+        (orderState.orders ?? []).isEmpty &&
+        (orderState.pendingOrders ?? []).isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
     if (orderState.status == OrderStatus.error &&
-        (orderState.orders ?? []).isEmpty) {
+        (orderState.orders ?? []).isEmpty &&
+        (orderState.pendingOrders ?? []).isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -103,7 +108,7 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
       );
     }
 
-    if (active.isEmpty && completed.isEmpty) {
+    if (pending.isEmpty && active.isEmpty && completed.isEmpty) {
       return const Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -130,15 +135,26 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
 
     return RefreshIndicator(
       onRefresh: () =>
-          ref.read(orderViewModelProvider.notifier).getShopOrders(),
+          ref.read(orderViewModelProvider.notifier).loadAllShopData(),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           /// Stats summary
-          _buildStatsRow(active.length, completed.length),
+          _buildStatsRow(pending.length, active.length, completed.length),
           const SizedBox(height: 20),
 
-          /// Active Orders (from /shop/orders - Accepted, Preparing, Out for Delivery)
+          /// New / Pending Orders (available for acceptance)
+          if (pending.isNotEmpty) ...[
+            _sectionHeader("New Orders", pending.length, AppColors.warning),
+            const SizedBox(height: 12),
+            ...pending.map((order) => Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: _buildPendingOrderCard(order),
+                )),
+            const SizedBox(height: 8),
+          ],
+
+          /// Active Orders (Accepted, Preparing, Out for Delivery)
           if (active.isNotEmpty) ...[
             _sectionHeader("In Progress", active.length, AppColors.primary),
             const SizedBox(height: 12),
@@ -163,9 +179,16 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
     );
   }
 
-  Widget _buildStatsRow(int active, int completed) {
+  Widget _buildStatsRow(int pending, int active, int completed) {
     return Row(
       children: [
+        _statChip(
+          "New",
+          pending,
+          AppColors.warning,
+          AppColors.warning.withValues(alpha: 0.15),
+        ),
+        const SizedBox(width: 10),
         _statChip(
           "Active",
           active,
@@ -428,6 +451,217 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
   }
 
 
+  /// Build a pending order card with Accept / Reject buttons
+  Widget _buildPendingOrderCard(OrderEntity order) {
+    final itemCount = order.items.length;
+    final displayId = order.orderNumber ??
+        ((order.orderId ?? '').length >= 6
+            ? (order.orderId ?? '').substring(0, 6).toUpperCase()
+            : (order.orderId ?? '').toUpperCase());
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.warning.withOpacity(0.4), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.warning.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.shopping_bag_outlined,
+                    color: AppColors.warning,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Order #$displayId",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        "$itemCount item${itemCount != 1 ? 's' : ''}",
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    "PENDING",
+                    style: TextStyle(
+                      color: AppColors.warning,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          /// Total
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+            child: Row(
+              children: [
+                const Text(
+                  "Total: ",
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  "Rs. ${order.totalAmount}",
+                  style: const TextStyle(
+                    color: AppColors.warning,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  order.paymentMethod,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+
+          /// Accept / Reject buttons
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            child: Row(
+              children: [
+                /// View Details
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _viewOrder(order),
+                    icon: const Icon(Icons.visibility, size: 18),
+                    label: const Text("View", style: TextStyle(fontSize: 13)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.textSecondary,
+                      side: const BorderSide(color: AppColors.divider),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                /// Reject
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _confirmReject(order),
+                    icon: const Icon(Icons.close, size: 18),
+                    label: const Text("Reject",
+                        style: TextStyle(fontSize: 13)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                      side: const BorderSide(color: AppColors.error),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                /// Accept
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _acceptOrder(order),
+                    icon: const Icon(Icons.check, size: 18),
+                    label: const Text("Accept",
+                        style: TextStyle(fontSize: 13)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Accept a pending order
+  Future<void> _acceptOrder(OrderEntity order) async {
+    final orderId = order.orderId;
+    if (orderId == null) return;
+
+    await ref
+        .read(orderViewModelProvider.notifier)
+        .acceptOrder(orderId);
+    if (!mounted) return;
+
+    // Refresh to reflect changes
+    ref.read(orderViewModelProvider.notifier).loadAllShopData();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Order accepted! Move to Preparing when ready."),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   Widget _buildStatusActions(
     OrderEntity order,
     List<String> nextStatuses,
@@ -653,8 +887,8 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
           .rejectOrder(orderId);
       if (!mounted) return;
 
-      // Refresh to remove rejected order from list
-      ref.read(orderViewModelProvider.notifier).getShopOrders();
+      // Refresh both pending and assigned order lists
+      ref.read(orderViewModelProvider.notifier).loadAllShopData();
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

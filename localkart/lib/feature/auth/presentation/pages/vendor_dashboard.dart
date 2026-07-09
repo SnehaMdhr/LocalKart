@@ -17,7 +17,7 @@ class _VendorDashboardState extends ConsumerState<VendorDashboard> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(orderViewModelProvider.notifier).getShopOrders();
+      ref.read(orderViewModelProvider.notifier).loadAllShopData();
       ref.read(shopViewModelProvider.notifier).getMyShop();
     });
   }
@@ -26,17 +26,19 @@ class _VendorDashboardState extends ConsumerState<VendorDashboard> {
   Widget build(BuildContext context) {
     final orderState = ref.watch(orderViewModelProvider);
     final shopState = ref.watch(shopViewModelProvider);
-    final orders = orderState.orders ?? [];
+    final assignedOrders = orderState.orders ?? [];
+    final pendingOrders = orderState.pendingOrders ?? [];
+    final allOrders = [...assignedOrders, ...pendingOrders];
     final shopEntity = shopState.shopEntity;
-    final stats = _calculateStats(orders);
-    final recentOrders = _getRecentOrders(orders);
+    final stats = _calculateStats(assignedOrders, pendingOrders);
+    final recentOrders = _getRecentOrders(allOrders);
     return Scaffold(
       backgroundColor: AppColors.background,
 
       body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
-            ref.read(orderViewModelProvider.notifier).getShopOrders(),
+            ref.read(orderViewModelProvider.notifier).loadAllShopData(),
             ref.read(shopViewModelProvider.notifier).getMyShop(),
           ]);
         },
@@ -176,14 +178,13 @@ class _VendorDashboardState extends ConsumerState<VendorDashboard> {
     );
   }
 
-  _Stats _calculateStats(List<OrderEntity> orders) {
-    int pending = 0;
+  _Stats _calculateStats(List<OrderEntity> assignedOrders, List<OrderEntity> pendingOrders) {
+    int pending = pendingOrders.length;
     int accepted = 0;
     int outForDelivery = 0;
     int delivered = 0;
-    for (final order in orders) {
+    for (final order in assignedOrders) {
       switch (order.status) {
-        case "Pending": pending++;
         case "Accepted": accepted++;
         case "Preparing": accepted++;
         case "Out for Delivery": outForDelivery++;

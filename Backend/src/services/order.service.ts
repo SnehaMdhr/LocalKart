@@ -8,6 +8,8 @@ import { HttpError } from "../errors/https-error";
 import { IOrder } from "../model/order.model";
 import { OrderRepository } from "../repositories/order.repository";
 import { CartRepository } from "../repositories/cart.repository";
+import { ShopModel } from "../model/shop.model";
+import { calculateDistance, estimateDeliveryTime } from "../utils/distance.util";
 
 const orderRepository = new OrderRepository();
 const cartRepository = new CartRepository();
@@ -171,5 +173,65 @@ export class OrderService {
     }
 
     return updated;
+  }
+
+  async getEtd(orderId: string): Promise<{ distance: number | null; estimatedMinutes: number | null; available: boolean; reason?: string }> {
+    const order = await orderRepository.getOrderById(orderId);
+
+    if (!order) {
+      throw new HttpError(404, "Order not found");
+    }
+
+    // Get customer delivery coordinates from the order
+    const deliveryAddr = order.deliveryAddress as any;
+    const custLat = deliveryAddr?.latitude;
+    const custLng = deliveryAddr?.longitude;
+
+    if (custLat == null || custLng == null) {
+      return {
+        distance: null,
+        estimatedMinutes: null,
+        available: false,
+        reason: "Customer delivery location coordinates missing from this order"
+      };
+    }
+
+    // Find the shop that accepted this order
+    const shopUserId = order.shopId;
+    if (!shopUserId) {
+      return {
+        distance: null,
+        estimatedMinutes: null,
+        available: false,
+        reason: "Order not yet accepted by any shop"
+      };
+    }
+
+    const shop = await ShopModel.findOne({ userId: shopUserId });
+    if (!shop) {
+      return {
+        distance: null,
+        estimatedMinutes: null,
+        available: false,
+        reason: "Shop profile not found for this vendor"
+      };
+    }
+
+    const shopLat = shop.latitude;
+    const shopLng = shop.longitude;
+
+    if (shopLat == null || shopLng == null) {
+      return {
+        distance: null,
+        estimatedMinutes: null,
+        available: false,
+        reason: "Shop location not set. Vendor needs to update their shop with a map location."
+      };
+    }
+
+    const distance = calculateDistance(custLat, custLng, shopLat, shopLng);
+    const estimatedMinutes = estimateDeliveryTime(distance);
+
+    return { distance, estimatedMinutes, available: true };
   }
 }

@@ -32,6 +32,12 @@ router.get(
 );
 
 router.get(
+  "/:id/etd",
+  authorizedMiddleware,
+  orderController.getEtd
+);
+
+router.get(
   "/shop/pending",
   authorizedMiddleware,
   shopkeeperOnlyMiddleware,

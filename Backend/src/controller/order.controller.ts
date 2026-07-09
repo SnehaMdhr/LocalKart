@@ -228,6 +228,22 @@ export class OrderController {
     }
   }
 
+  async getEtd(req: Request, res: Response) {
+    try {
+      const etd = await orderService.getEtd(String(req.params.id));
+
+      return res.status(200).json({
+        success: true,
+        data: etd,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode ?? 500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
   async markOrderPaid(req: Request, res: Response) {
     try {
       const order = await orderService.markOrderPaid(

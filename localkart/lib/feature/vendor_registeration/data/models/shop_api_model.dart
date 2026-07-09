@@ -38,6 +38,14 @@ class ShopApiModel {
       payload["imageUrl"] = imageUrl;
     }
 
+    if (latitude != null) {
+      payload["latitude"] = latitude;
+    }
+
+    if (longitude != null) {
+      payload["longitude"] = longitude;
+    }
+
     return payload;
   }
 
@@ -81,6 +89,8 @@ class ShopApiModel {
       description: entity.description,
       categories: entity.categories,
       imageUrl: entity.imageUrl,
+      latitude: entity.latitude,
+      longitude: entity.longitude,
     );
   }
 

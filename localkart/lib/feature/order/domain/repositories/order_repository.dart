@@ -24,4 +24,5 @@ abstract interface class IOrderRepository {
     required String status,
   });
   Future<Either<Failure, OrderEntity>> markOrderPaid(String orderId);
+  Future<Either<Failure, Map<String, dynamic>>> getOrderEtd(String orderId);
 }

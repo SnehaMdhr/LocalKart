@@ -29,4 +29,5 @@ abstract interface class IOrderRemoteDatasource {
     required String status,
   });
   Future<OrderApiModel?> markOrderPaid(String orderId);
+  Future<Map<String, dynamic>?> getOrderEtd(String orderId);
 }

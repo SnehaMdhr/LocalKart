@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 
 class ApiEndpoints {
   ApiEndpoints._();
-  static const bool isPhysicalDevice = true;
-  static const String compIpAddress = "10.197.20.231";
+  static const bool isPhysicalDevice = false;
+  static const String compIpAddress = "192.168.188.231";
   static String get baseUrl {
     if (isPhysicalDevice) {
       return "http://$compIpAddress:3000/api";
@@ -89,4 +89,5 @@ class ApiEndpoints {
   static const String updateOrderStatus = "/order/";
   static const String deleteOrder = "/order/";
   static const String markOrderPaid = "/order/";
+  static const String getOrderEtd = "/order/";
 }

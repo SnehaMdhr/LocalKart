@@ -293,6 +293,30 @@ class OrderRepository implements IOrderRepository {
   }
 
   @override
+  Future<Either<Failure, Map<String, dynamic>>> getOrderEtd(String orderId) async {
+    if (await _networkInfo.isConnected) {
+      try {
+        final result = await _remoteDatasource.getOrderEtd(orderId);
+        if (result == null) {
+          return Left(ApiFailure(message: "Failed to get ETD"));
+        }
+        return Right(result);
+      } on DioException catch (e) {
+        return Left(
+          ApiFailure(
+            message: e.response?.data["message"] ?? "Failed to get ETD",
+            statusCode: e.response?.statusCode,
+          ),
+        );
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    } else {
+      return Left(NetworkFailure());
+    }
+  }
+
+  @override
   Future<Either<Failure, OrderEntity>> markOrderPaid(String orderId) async {
     if (await _networkInfo.isConnected) {
       try {

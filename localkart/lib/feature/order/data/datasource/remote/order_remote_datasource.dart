@@ -201,4 +201,19 @@ class OrderRemoteDatasource implements IOrderRemoteDatasource {
       rethrow;
     }
   }
+
+  @override
+  Future<Map<String, dynamic>?> getOrderEtd(String orderId) async {
+    try {
+      final path = '${ApiEndpoints.getOrderEtd}$orderId/etd';
+      final response = await _apiClient.get(path);
+
+      final responseData = response.data as Map<String, dynamic>?;
+      if (responseData == null) return null;
+
+      return responseData['data'] as Map<String, dynamic>?;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

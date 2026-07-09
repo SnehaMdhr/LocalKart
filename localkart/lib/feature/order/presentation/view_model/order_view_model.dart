@@ -8,6 +8,7 @@ import 'package:localkart/feature/order/domain/usecases/accept_order_usecase.dar
 import 'package:localkart/feature/order/domain/usecases/reject_order_usecase.dart';
 import 'package:localkart/feature/order/domain/usecases/update_order_status_usecase.dart';
 import 'package:localkart/feature/order/domain/usecases/mark_order_paid_usecase.dart';
+import 'package:localkart/feature/order/domain/usecases/get_order_etd_usecase.dart';
 import 'package:localkart/feature/order/domain/entities/order_entity.dart';
 import 'package:localkart/feature/order/presentation/states/order_state.dart';
 
@@ -24,6 +25,7 @@ class OrderViewModel extends Notifier<OrderState> {
   late final RejectOrderUsecase _rejectOrderUsecase;
   late final UpdateOrderStatusUsecase _updateOrderStatusUsecase;
   late final MarkOrderPaidUsecase _markOrderPaidUsecase;
+  late final GetOrderEtdUsecase _getOrderEtdUsecase;
 
   @override
   OrderState build() {
@@ -36,6 +38,7 @@ class OrderViewModel extends Notifier<OrderState> {
     _rejectOrderUsecase = ref.read(rejectOrderUsecaseProvider);
     _updateOrderStatusUsecase = ref.read(updateOrderStatusUsecaseProvider);
     _markOrderPaidUsecase = ref.read(markOrderPaidUsecaseProvider);
+    _getOrderEtdUsecase = ref.read(getOrderEtdUsecaseProvider);
 
     return const OrderState();
   }
@@ -288,6 +291,26 @@ class OrderViewModel extends Notifier<OrderState> {
         state = state.copyWith(
           status: OrderStatus.loaded,
           currentOrder: order,
+          errorMessage: null,
+        );
+      },
+    );
+  }
+
+  Future<void> getOrderEtd(String orderId) async {
+    final params = GetOrderEtdParams(orderId: orderId);
+    final result = await _getOrderEtdUsecase(params);
+
+    result.fold(
+      (failure) {
+        state = state.copyWith(
+          etdInfo: null,
+          errorMessage: failure.message,
+        );
+      },
+      (etd) {
+        state = state.copyWith(
+          etdInfo: etd,
           errorMessage: null,
         );
       },

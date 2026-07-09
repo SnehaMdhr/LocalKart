@@ -17,11 +17,39 @@ class VendorOrderStatusScreen extends ConsumerStatefulWidget {
 class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScreen> {
   bool _isProcessing = false;
 
+  bool _shouldShowEtd(String status) {
+    const etdStatuses = ["Out for Delivery", "Delivered"];
+    return etdStatuses.contains(status);
+  }
+
   @override
   Widget build(BuildContext context) {
     final orderState = ref.watch(orderViewModelProvider);
     // Use the latest order from state if available, otherwise the initial one
     final order = orderState.currentOrder ?? widget.order;
+
+    // Reactively fetch ETD when order status changes to Out for Delivery or Delivered
+    ref.listen(orderViewModelProvider, (previous, next) {
+      final prevStatus = previous?.currentOrder?.status ?? widget.order.status;
+      final currStatus = next.currentOrder?.status ?? widget.order.status;
+      if (_shouldShowEtd(currStatus) && !_shouldShowEtd(prevStatus)) {
+        final orderId = next.currentOrder?.orderId ?? widget.order.orderId;
+        if (orderId != null) {
+          ref.read(orderViewModelProvider.notifier).getOrderEtd(orderId);
+        }
+      }
+    });
+
+    // Also fetch on initial build if order is already in applicable status
+    if (orderState.etdInfo == null) {
+      final orderId = widget.order.orderId;
+      final currStatus = orderState.currentOrder?.status ?? widget.order.status;
+      if (orderId != null && _shouldShowEtd(currStatus)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(orderViewModelProvider.notifier).getOrderEtd(orderId);
+        });
+      }
+    }
     final mergedItems = _mergedItems(order);
 
     return Scaffold(
@@ -46,7 +74,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
           const SizedBox(height: 20),
 
           /// Interactive Status Section
-          _buildStatusManagement(order),
+          _buildStatusManagement(order, orderState.etdInfo),
           const SizedBox(height: 24),
 
           /// Customer Info
@@ -127,7 +155,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
     );
   }
 
-  Widget _buildStatusManagement(OrderEntity order) {
+  Widget _buildStatusManagement(OrderEntity order, Map<String, dynamic>? etdInfo) {
     final allStatuses = ["Pending", "Accepted", "Preparing", "Out for Delivery", "Delivered"];
     final currentIndex = allStatuses.indexOf(order.status);
     final isTerminal = ["Delivered", "Rejected", "Cancelled"].contains(order.status);
@@ -188,6 +216,18 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
             }),
 
           const SizedBox(height: 20),
+
+          /// ETD section — shown when Out for Delivery or Delivered
+          if (_shouldShowEtd(order.status) && etdInfo != null && etdInfo['available'] == true) ...[
+            const SizedBox(height: 20),
+            _buildEtdCard(etdInfo, order.status),
+          ] else if (_shouldShowEtd(order.status) && etdInfo == null) ...[
+            const SizedBox(height: 20),
+            _buildEtdLoading(),
+          ] else if (_shouldShowEtd(order.status) && etdInfo != null && etdInfo['available'] == false) ...[
+            const SizedBox(height: 20),
+            _buildEtdUnavailable(etdInfo),
+          ],
 
           /// Action buttons at bottom
           if (!isTerminal) ...[
@@ -809,6 +849,149 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
         content: Text("Payment confirmed!"),
         backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Widget _buildEtdCard(Map<String, dynamic> etdInfo, String orderStatus) {
+    final distance = etdInfo['distance'];
+    final estimatedMinutes = etdInfo['estimatedMinutes'];
+    final distanceKm = distance is double ? distance.toStringAsFixed(1) : '${distance ?? '--'}';
+    final minutes = estimatedMinutes is int ? estimatedMinutes : '${estimatedMinutes ?? '--'}';
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE1F5FE).withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF0288D1).withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0288D1).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.delivery_dining, color: Color(0xFF0288D1), size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  orderStatus == "Delivered"
+                      ? "Delivered successfully"
+                      : "Rider is on the way",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: Color(0xFF0288D1),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                ClipRect(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      children: [
+                        if (orderStatus == "Out for Delivery") ...[
+                          const Icon(Icons.timer_outlined, size: 13, color: AppColors.textSecondary),
+                          const SizedBox(width: 3),
+                          Text(
+                            "ETA: $minutes mins",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                        ],
+                        const Icon(Icons.map_outlined, size: 13, color: AppColors.textSecondary),
+                        const SizedBox(width: 3),
+                        Text(
+                          "$distanceKm km away",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEtdUnavailable(Map<String, dynamic> etdInfo) {
+    final reason = etdInfo['reason'] as String? ?? 'Location data not available';
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF4E5),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.info_outline, color: Colors.orange, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "ETD Unavailable",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Color(0xFFB8860B),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  reason,
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.4),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEtdLoading() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.inputFill,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: const Row(
+        children: [
+          SizedBox(
+            width: 24, height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+          ),
+          SizedBox(width: 12),
+          Text(
+            "Calculating estimated delivery...",
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          ),
+        ],
       ),
     );
   }

@@ -575,19 +575,35 @@ class _AddressPickerSheetState extends State<_AddressPickerSheet> {
       if (!serviceEnabled) {
         if (mounted) {
           setState(() => _isDetectingLocation = false);
-          _showSnackBar('Please enable location services in your device settings.');
+          _showSnackBar(
+            'Please enable location services in your device settings.',
+            action: SnackBarAction(
+              label: 'Settings',
+              onPressed: () => Geolocator.openLocationSettings(),
+            ),
+          );
         }
         return;
       }
 
+      // Check and request location permission
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            setState(() => _isDetectingLocation = false);
+            _showSnackBar('Location permission is required to detect your address.');
+          }
+          return;
+        }
       }
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+
+      // Handle permanently denied permission
+      if (permission == LocationPermission.deniedForever) {
         if (mounted) {
           setState(() => _isDetectingLocation = false);
-          _showSnackBar('Location permission is required to detect your address.');
+          _showPermissionDeniedDialog();
         }
         return;
       }
@@ -691,7 +707,7 @@ class _AddressPickerSheetState extends State<_AddressPickerSheet> {
     Navigator.pop(context);
   }
 
-  void _showSnackBar(String message) {
+  void _showSnackBar(String message, {SnackBarAction? action}) {
     if (!mounted) return;
     // Also set inline error so the user sees it inside the sheet
     setState(() => _errorMessage = message);
@@ -703,6 +719,44 @@ class _AddressPickerSheetState extends State<_AddressPickerSheet> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
         duration: const Duration(seconds: 4),
+        action: action,
+      ),
+    );
+  }
+
+  void _showPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.location_off, color: AppColors.error, size: 24),
+            SizedBox(width: 10),
+            Text('Location Permission',
+                style: TextStyle(color: AppColors.textPrimary, fontSize: 18)),
+          ],
+        ),
+        content: const Text(
+          'Location permission has been permanently denied. Please enable it from your device settings to automatically detect your address.',
+          style: TextStyle(color: AppColors.textSecondary, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel',
+                style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Geolocator.openAppSettings();
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+            child: const Text('Open Settings',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }

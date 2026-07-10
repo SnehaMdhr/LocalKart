@@ -8,9 +8,11 @@ import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_client.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
 import 'package:localkart/core/services/storage/user_session_service.dart';
+import 'package:localkart/core/utils/snackbar_utils.dart';
 import 'package:localkart/core/widgets/app_background.dart';
 import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/feature/auth/presentation/view_model/auth_view_model.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -60,7 +62,66 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     super.dispose();
   }
 
+  Future<bool> _requestCameraPermission() async {
+    final status = await Permission.camera.request();
+    if (status.isGranted) return true;
+
+    if (status.isPermanentlyDenied) {
+      if (mounted) _showPermissionDeniedDialog('Camera');
+    } else {
+      if (mounted) {
+        SnackbarUtils.showError(
+          context,
+          'Camera permission is required to take a photo.',
+        );
+      }
+    }
+    return false;
+  }
+
+  Future<bool> _requestGalleryPermission() async {
+    // On Android 13+ (API 33+), the photo picker is used and doesn't need
+    // storage permission. On iOS 14+, PHPicker is used and doesn't need
+    // photo library permission either. We check anyway for older devices.
+    Permission permission;
+    if (await Permission.photos.isGranted || await Permission.storage.isGranted) {
+      return true;
+    }
+
+    // Try photos first (Android 13+ / iOS), fall back to storage
+    permission = Permission.photos;
+    var status = await permission.request();
+    if (status.isGranted) return true;
+
+    if (!status.isGranted) {
+      permission = Permission.storage;
+      status = await permission.request();
+      if (status.isGranted) return true;
+    }
+
+    if (status.isPermanentlyDenied) {
+      if (mounted) _showPermissionDeniedDialog('Storage');
+    } else {
+      if (mounted) {
+        SnackbarUtils.showError(
+          context,
+          'Storage permission is required to access your gallery.',
+        );
+      }
+    }
+    return false;
+  }
+
   Future<void> _pickImage(ImageSource source) async {
+    // Check and request permission before picking
+    if (source == ImageSource.camera) {
+      final hasPermission = await _requestCameraPermission();
+      if (!hasPermission) return;
+    } else {
+      final hasPermission = await _requestGalleryPermission();
+      if (!hasPermission) return;
+    }
+
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: source,
@@ -75,14 +136,48 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Failed to pick image: $e"),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
+      SnackbarUtils.showError(
+        context,
+        'Failed to pick image. Please try again.',
       );
     }
+  }
+
+  void _showPermissionDeniedDialog(String permissionName) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 24),
+            const SizedBox(width: 10),
+            Text('$permissionName Permission',
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 18)),
+          ],
+        ),
+        content: Text(
+          '$permissionName permission has been permanently denied. Please enable it from your device settings to access this feature.',
+          style: const TextStyle(color: AppColors.textSecondary, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel',
+                style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              openAppSettings();
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+            child: const Text('Open Settings',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showImagePickerOptions() {

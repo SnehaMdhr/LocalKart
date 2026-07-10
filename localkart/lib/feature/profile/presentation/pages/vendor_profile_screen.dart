@@ -8,16 +8,15 @@ import 'package:localkart/core/services/storage/user_session_service.dart';
 import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/core/widgets/custom_icon_button.dart';
 import 'package:localkart/core/widgets/custom_outlined_button.dart';
-import 'package:localkart/feature/address/presentation/pages/address_screen.dart';
 import 'package:localkart/feature/auth/presentation/pages/login_screen.dart';
 import 'package:localkart/feature/auth/presentation/view_model/auth_view_model.dart';
 import 'package:localkart/feature/profile/presentation/pages/change_password_screen.dart';
 import 'package:localkart/feature/profile/presentation/pages/edit_profile_screen.dart';
+import 'package:localkart/feature/profile/presentation/pages/faq_screen.dart';
+import 'package:localkart/feature/profile/presentation/pages/help_center_screen.dart';
 import 'package:localkart/feature/profile/presentation/pages/privacy_policy-screen.dart';
 import 'package:localkart/feature/profile/presentation/pages/terms_and_conditions_screen.dart';
 import 'package:localkart/feature/vendor_registeration/presentation/pages/edit_shop_screen.dart';
-import 'package:localkart/feature/vendor_registeration/presentation/pages/register_shop_screen.dart';
-
 class VendorProfileScreen extends ConsumerStatefulWidget {
   const VendorProfileScreen({super.key});
 
@@ -330,6 +329,31 @@ class _ProfileScreenState extends ConsumerState<VendorProfileScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => const TermsAndConditionsScreen(),
+                  ),
+                );
+              },
+            ),
+            _profileTile(
+              icon: Icons.help_outline_outlined,
+              title: "Help Center",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const HelpCenterScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            _profileTile(
+              icon: Icons.fax_outlined,
+              title: "Frequently Asked Questions",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const FaqScreen(),
                   ),
                 );
               },

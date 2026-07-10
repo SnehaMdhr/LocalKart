@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_client.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
+import 'package:localkart/core/utils/snackbar_utils.dart';
 import 'package:localkart/core/widgets/app_background.dart';
 import 'package:localkart/core/widgets/custom_button.dart';
 
@@ -52,34 +53,16 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Password changed successfully"),
-          backgroundColor: AppColors.primary,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      SnackbarUtils.showSuccess(context, "Password changed successfully");
       Navigator.pop(context);
     } on DioException catch (e) {
       if (!mounted) return;
       final message =
           e.response?.data?["message"] as String? ?? "Failed to change password";
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      SnackbarUtils.showError(context, message);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Failed to change password: $e"),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      SnackbarUtils.showError(context, "Failed to change password: $e");
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
+import 'package:localkart/core/utils/snackbar_utils.dart';
 import 'package:localkart/feature/order/domain/entities/order_entity.dart';
 import 'package:localkart/feature/order/presentation/pages/vendor_order_status_screen.dart';
 import 'package:localkart/feature/order/presentation/states/order_state.dart';
@@ -653,13 +654,7 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
     // Refresh to reflect changes
     ref.read(orderViewModelProvider.notifier).loadAllShopData();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Order accepted! Move to Preparing when ready."),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    SnackbarUtils.showSuccess(context, "Order accepted! Move to Preparing when ready.");
   }
 
   Widget _buildStatusActions(
@@ -890,13 +885,7 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
       // Refresh both pending and assigned order lists
       ref.read(orderViewModelProvider.notifier).loadAllShopData();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Order rejected"),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      SnackbarUtils.showError(context, "Order rejected");
     }
   }
 
@@ -911,13 +900,7 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
         .read(orderViewModelProvider.notifier)
         .updateOrderStatus(orderId: orderId, status: newStatus);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Order status updated to $newStatus"),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    SnackbarUtils.showSuccess(context, "Order status updated to $newStatus");
   }
 
   Color _statusBgColor(String status) {

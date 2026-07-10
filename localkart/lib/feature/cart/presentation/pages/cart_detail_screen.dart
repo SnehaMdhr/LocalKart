@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
+import 'package:localkart/core/utils/snackbar_utils.dart';
 import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/feature/cart/domain/entities/cart_entity.dart';
 import 'package:localkart/feature/cart/presentation/states/cart_state.dart';
@@ -102,7 +103,10 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
                   ),
                 );
                 if (confirmed == true && mounted) {
-                  ref.read(cartViewModelProvider.notifier).clearCart();
+                  await ref.read(cartViewModelProvider.notifier).clearCart();
+                  if (mounted) {
+                    SnackbarUtils.showSuccess(context, "Cart cleared");
+                  }
                 }
               },
             ),
@@ -400,10 +404,17 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
                     ),
                   ),
                   InkWell(
-                    onTap: () {
-                      ref
+                    onTap: () async {
+                      await ref
                           .read(cartViewModelProvider.notifier)
                           .removeFromCart(item.productId);
+                      if (mounted) {
+                        SnackbarUtils.showError(
+                          context,
+                          "${item.productName} removed from cart",
+                          duration: const Duration(seconds: 2),
+                        );
+                      }
                     },
                     borderRadius: BorderRadius.circular(20),
                     child: const Padding(
@@ -438,18 +449,32 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (item.quantity <= 1) {
-                              ref
+                              await ref
                                   .read(cartViewModelProvider.notifier)
                                   .removeFromCart(item.productId);
+                              if (mounted) {
+                                SnackbarUtils.showError(
+                                  context,
+                                  "${item.productName} removed from cart",
+                                  duration: const Duration(seconds: 2),
+                                );
+                              }
                             } else {
-                              ref
+                              await ref
                                   .read(cartViewModelProvider.notifier)
                                   .updateQuantity(
                                     item.productId,
                                     item.quantity - 1,
                                   );
+                              if (mounted) {
+                                SnackbarUtils.showInfo(
+                                  context,
+                                  "Quantity updated",
+                                  duration: const Duration(seconds: 1),
+                                );
+                              }
                             }
                           },
                           icon: const Icon(
@@ -471,13 +496,20 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
                           ),
                         ),
                         IconButton(
-                          onPressed: () {
-                            ref
+                          onPressed: () async {
+                            await ref
                                 .read(cartViewModelProvider.notifier)
                                 .updateQuantity(
                                   item.productId,
                                   item.quantity + 1,
                                 );
+                            if (mounted) {
+                              SnackbarUtils.showInfo(
+                                context,
+                                "Quantity updated",
+                                duration: const Duration(seconds: 1),
+                              );
+                            }
                           },
                           icon: const CircleAvatar(
                             radius: 13,

@@ -353,23 +353,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Profile updated successfully"),
-          backgroundColor: AppColors.primary,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      SnackbarUtils.showSuccess(context, "Profile updated successfully");
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Failed to update profile: $e"),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      SnackbarUtils.showError(context, "Failed to update profile: $e");
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

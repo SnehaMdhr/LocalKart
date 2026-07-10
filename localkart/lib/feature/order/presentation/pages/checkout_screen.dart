@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
+import 'package:localkart/core/utils/snackbar_utils.dart';
 import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/feature/address/domain/entities/address_entity.dart';
 import 'package:localkart/feature/address/presentation/view_model/address_view_model.dart';
@@ -54,16 +55,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   Future<void> _placeOrder(CartEntity cart) async {
     final address = _addressController.text.trim();
     if (address.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please enter your delivery address"),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-          ),
-        ),
-      );
+      SnackbarUtils.showError(context, "Please enter your delivery address");
       return;
     }
 
@@ -711,16 +703,11 @@ class _AddressPickerSheetState extends State<_AddressPickerSheet> {
     if (!mounted) return;
     // Also set inline error so the user sees it inside the sheet
     setState(() => _errorMessage = message);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-        duration: const Duration(seconds: 4),
-        action: action,
-      ),
+    SnackbarUtils.showError(
+      context,
+      message,
+      duration: const Duration(seconds: 4),
+      action: action,
     );
   }
 

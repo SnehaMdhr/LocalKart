@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
+import 'package:localkart/core/widgets/tab_navigator.dart';
 import 'package:localkart/core/widgets/title_app_bar.dart';
 import 'package:localkart/feature/auth/presentation/pages/discover_screen.dart';
 import 'package:localkart/feature/cart/presentation/pages/cart_screen.dart';
@@ -19,11 +20,13 @@ class _BottomNavigationBarForCustomerState
     extends ConsumerState<BottomNavigationBarForCustomer> {
   int _selectedIndex = 0;
 
-  final List<Widget> screens = const [
-    HomeScreen(),
-    DiscoverScreen(),
-    CartScreen(),
-    ProfileScreen(),
+  /// Each tab gets its own [TabNavigator] so pushed screens stay within the
+  /// tab and the bottom navigation bar remains visible.
+  late final List<Widget> _tabNavigators = [
+    TabNavigator(screen: const HomeScreen()),
+    TabNavigator(screen: const DiscoverScreen()),
+    TabNavigator(screen: const CartScreen()),
+    TabNavigator(screen: const ProfileScreen()),
   ];
 
   Widget _buildNavItem({
@@ -83,11 +86,18 @@ class _BottomNavigationBarForCustomerState
     return Scaffold(
       appBar: TitleAppBar(
         onNotificationTap: () {
-          // TODO: Navigate to Notification Screen
+          // Notification screen should appear on top of everything
+          // (covers the bottom nav bar) — so root Navigator push is fine.
+          // If you want it inside the tab, use _pushWithinCurrentTab.
         },
       ),
 
-      body: screens[_selectedIndex],
+      /// IndexedStack keeps ALL tab navigators alive in the widget tree.
+      /// Switching tabs preserves each tab's navigation state.
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _tabNavigators,
+      ),
 
       bottomNavigationBar: SafeArea(
         child: Container(

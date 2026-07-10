@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
+import 'package:localkart/core/utils/snackbar_utils.dart';
 import 'package:localkart/feature/cart/presentation/view_model/cart_view_model.dart';
 import '../../domain/entities/product_entity.dart';
 
@@ -126,18 +127,10 @@ class ProductCard extends ConsumerWidget {
                   quantity: 1,
                 );
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        "Added ${product.productName} to cart",
-                      ),
-                      backgroundColor: AppColors.primary,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      duration: const Duration(seconds: 2),
-                    ),
+                  SnackbarUtils.showSuccess(
+                    context,
+                    "Added ${product.productName} to cart",
+                    duration: const Duration(seconds: 2),
                   );
                 }
               },

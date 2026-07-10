@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
+import 'package:localkart/core/utils/snackbar_utils.dart';
 import 'package:localkart/feature/collection/domain/entities/collection_entity.dart';
 import 'package:localkart/feature/collection/presentation/pages/collection_products_sheet.dart';
 import 'package:localkart/feature/collection/presentation/states/collection_state.dart';
@@ -106,17 +107,9 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
                         if (!context.mounted) return;
                         if (ctx.mounted) {
                           Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Collection "$name" created!',
-                              ),
-                              backgroundColor: AppColors.primary,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
+                          SnackbarUtils.showSuccess(
+                            context,
+                            'Collection "$name" created!',
                           );
                         }
                       }
@@ -145,18 +138,9 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
                           if (!context.mounted) return;
                           if (ctx.mounted) {
                             Navigator.pop(ctx);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Collection "$name" created!',
-                                ),
-                                backgroundColor: AppColors.primary,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(10),
-                                ),
-                              ),
+                            SnackbarUtils.showSuccess(
+                              context,
+                              'Collection "$name" created!',
                             );
                           }
                         }
@@ -687,15 +671,9 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
                   .read(collectionViewModelProvider.notifier)
                   .deleteCollection(collectionId);
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text("Collection removed"),
-                  backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
+              SnackbarUtils.showError(
+                context,
+                "Collection removed",
               );
             },
             child: const Text(

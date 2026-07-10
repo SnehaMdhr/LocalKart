@@ -5,6 +5,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:localkart/app/theme/app_colors.dart';
+import 'package:localkart/core/utils/snackbar_utils.dart';
 import 'package:localkart/feature/address/domain/entities/address_entity.dart';
 import 'package:localkart/feature/address/presentation/states/address_state.dart';
 import 'package:localkart/feature/address/presentation/view_model/address_view_model.dart';
@@ -35,45 +36,12 @@ class _AddressScreenState extends ConsumerState<AddressScreen> {
   /// Listen for error state changes and show a SnackBar
   void _showErrorSnackBar(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-        duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: 'Dismiss',
-          textColor: AppColors.white,
-          onPressed: () {},
-        ),
-      ),
-    );
+    SnackbarUtils.showError(context, message);
   }
 
   void _showSuccessSnackBar(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: AppColors.white, size: 20),
-            const SizedBox(width: 10),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    SnackbarUtils.showSuccess(context, message);
   }
 
   @override
@@ -828,18 +796,11 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
 
   void _showSnackBar(String message, {SnackBarAction? action}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-        duration: const Duration(seconds: 5),
-        action: action,
-      ),
+    SnackbarUtils.showError(
+      context,
+      message,
+      duration: const Duration(seconds: 5),
+      action: action,
     );
   }
 

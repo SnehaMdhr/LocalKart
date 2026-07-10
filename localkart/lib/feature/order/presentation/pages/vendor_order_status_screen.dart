@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
+import 'package:localkart/core/utils/snackbar_utils.dart';
 import 'package:localkart/feature/order/domain/entities/order_entity.dart';
 import 'package:localkart/feature/order/presentation/view_model/order_view_model.dart';
 
@@ -757,13 +758,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
     if (!mounted) return;
     setState(() => _isProcessing = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Order accepted! Move to Preparing when ready."),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    SnackbarUtils.showSuccess(context, "Order accepted! Move to Preparing when ready.");
   }
 
   Future<void> _rejectOrder(OrderEntity order) async {
@@ -789,13 +784,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
       if (!mounted) return;
       setState(() => _isProcessing = false);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Order rejected"),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      SnackbarUtils.showError(context, "Order rejected");
     }
   }
 
@@ -816,13 +805,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
     if (!mounted) return;
     setState(() => _isProcessing = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Status updated to $nextStatus"),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    SnackbarUtils.showSuccess(context, "Status updated to $nextStatus");
   }
 
   /// Whether to show the "Mark as Paid" button
@@ -844,13 +827,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
     if (!mounted) return;
     setState(() => _isProcessing = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Payment confirmed!"),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    SnackbarUtils.showSuccess(context, "Payment confirmed!");
   }
 
   Widget _buildEtdCard(Map<String, dynamic> etdInfo, String orderStatus) {

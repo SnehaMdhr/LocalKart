@@ -58,7 +58,8 @@ export class CollectionService {
       throw new HttpError(404, "Collection not found");
     }
 
-    if (collection.userId.toString() !== userId) {
+    const collUserId = (collection.userId as any)._id || collection.userId;
+    if (collUserId.toString() !== userId) {
     throw new HttpError(
       403,
       "You are not authorized to update this collection."
@@ -87,7 +88,8 @@ export class CollectionService {
     throw new HttpError(404, "Collection not found");
   }
 
-   if (collection.userId.toString() !== userId) {
+   const collUserId = (collection.userId as any)._id || collection.userId;
+   if (collUserId.toString() !== userId) {
     throw new HttpError(
       403,
       "You are not authorized to delete this collection."
@@ -110,7 +112,8 @@ async addProductToCollection(
         throw new HttpError(404, "Collection not found");
     }
 
-    if (collection.userId.toString() !== userId) {
+    const collUserId = (collection.userId as any)._id || collection.userId;
+    if (collUserId.toString() !== userId) {
         throw new HttpError(
             403,
             "Unauthorized"
@@ -149,7 +152,8 @@ async removeProductFromCollection(
     throw new HttpError(404, "Collection not found");
   }
 
-  if (collection.userId.toString() !== userId) {
+  const collUserId = (collection.userId as any)._id || collection.userId;
+  if (collUserId.toString() !== userId) {
     throw new HttpError(
       403,
       "You are not authorized to modify this collection."

@@ -109,13 +109,21 @@ export class ProductController {
   ) {
     try {
 
-      const validatedData =
-        CreateProductDto.parse({
-          ...req.body,
-          imageUrl: req.file
-            ? `/uploads/${req.file.filename}`
-            : undefined,
-        });
+      console.log("🔍 createProduct req.body:", JSON.stringify(req.body));
+      console.log("🔍 createProduct req.file:", req.file?.filename);
+
+      const rawPrice = req.body.price;
+      const body = {
+        ...req.body,
+        price: typeof rawPrice === "string" ? Number(rawPrice) : rawPrice,
+        imageUrl: req.file
+          ? `/uploads/${req.file.filename}`
+          : req.body.imageUrl || undefined,
+      };
+
+      console.log("🔍 Parsed body price:", body.price, "type:", typeof body.price);
+
+      const validatedData = CreateProductDto.parse(body);
 
       const product =
         await productService.createProduct(
@@ -239,14 +247,20 @@ export class ProductController {
   ) {
     try {
 
+      const body = {
+        ...req.body,
+        ...(req.file && {
+          imageUrl:
+            `/uploads/${req.file.filename}`,
+        }),
+      };
+
+      if (typeof body.price === "string") {
+        body.price = Number(body.price);
+      }
+
       const validatedData =
-        UpdateProductDto.parse({
-          ...req.body,
-          ...(req.file && {
-            imageUrl:
-              `/uploads/${req.file.filename}`,
-          }),
-        });
+        UpdateProductDto.parse(body);
 
       const product =
         await productService.updateProduct(

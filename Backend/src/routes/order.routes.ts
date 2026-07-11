@@ -26,6 +26,13 @@ router.get(
 );
 
 router.get(
+  "/admin",
+  authorizedMiddleware,
+  adminOnlyMiddleware,
+  orderController.getAllOrdersForAdmin
+);
+
+router.get(
   "/:id",
   authorizedMiddleware,
   orderController.getOrderById

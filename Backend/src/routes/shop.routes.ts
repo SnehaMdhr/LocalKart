@@ -9,6 +9,7 @@ const router = Router();
 
 router.post("/register-shop", authorizedMiddleware, shopController.createShop)
 router.get("/my-shop", authorizedMiddleware,shopController.getMyShop)
+router.get("/:id", authorizedMiddleware, shopController.getShopById)
 router.put("/update-shop",authorizedMiddleware,shopkeeperOnlyMiddleware,uploads.single("imageUrl"),shopController.updateShop);
 router.delete("/delete-shop/:id",authorizedMiddleware,adminOnlyMiddleware,shopController.deleteShop);
 router.get("/",authorizedMiddleware,adminOnlyMiddleware,shopController.getAllShops);

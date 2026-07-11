@@ -146,8 +146,10 @@ export class ShopService {
         }
       );
 
+    // shop.userId is populated by getShopById, extract the _id
+    const shopkeeperId = (shop.userId as any)._id || shop.userId;
     await userRepository.updateUser(
-      shop.userId.toString(),
+      shopkeeperId,
       {
         role: "Shopkeeper"
       }
@@ -193,8 +195,9 @@ export class ShopService {
       );
     }
 
+    const customerId = (shop.userId as any)._id || shop.userId;
     await userRepository.updateUser(
-      shop.userId.toString(),
+      customerId,
       {
         role: "Customer"
       }

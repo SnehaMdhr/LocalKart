@@ -22,11 +22,11 @@ export class ShopRepository implements IShopRepository{
         return await shop.save();
     }
     async getShopById(id: string): Promise<IShop | null> {
-        const shop = await ShopModel.findOne({"_id":id});
+        const shop = await ShopModel.findOne({"_id":id}).populate("userId", "name email");
         return shop;
     }
     async getAllShops(): Promise<IShop[]> {
-        const shops = await ShopModel.find();
+        const shops = await ShopModel.find().populate("userId", "name email");
         return shops;
     }
     async updateShop(id: string, updateData: Partial<IShop>): Promise<IShop | null> {

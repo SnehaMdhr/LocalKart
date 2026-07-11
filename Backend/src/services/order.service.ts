@@ -175,6 +175,30 @@ export class OrderService {
     return updated;
   }
 
+  async getAllOrdersForAdmin(
+    page: number,
+    size: number,
+    status?: string,
+    paymentStatus?: string
+  ) {
+    const { orders, total } = await orderRepository.getAllOrders(
+      page,
+      size,
+      status,
+      paymentStatus
+    );
+
+    return {
+      data: orders,
+      pagination: {
+        page,
+        size,
+        total,
+        totalPages: Math.ceil(total / size),
+      },
+    };
+  }
+
   async getEtd(orderId: string): Promise<{ distance: number | null; estimatedMinutes: number | null; available: boolean; reason?: string }> {
     const order = await orderRepository.getOrderById(orderId);
 

@@ -228,6 +228,32 @@ export class OrderController {
     }
   }
 
+  async getAllOrdersForAdmin(req: Request, res: Response) {
+    try {
+      const page = Number(req.query.page) || 1;
+      const size = Number(req.query.size) || 10;
+      const status = req.query.status as string | undefined;
+      const paymentStatus = req.query.paymentStatus as string | undefined;
+
+      const result = await orderService.getAllOrdersForAdmin(
+        page,
+        size,
+        status,
+        paymentStatus
+      );
+
+      return res.status(200).json({
+        success: true,
+        ...result,
+      });
+    } catch (error: any) {
+      return res.status(error.statusCode ?? 500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
   async getEtd(req: Request, res: Response) {
     try {
       const etd = await orderService.getEtd(String(req.params.id));

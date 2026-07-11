@@ -12,6 +12,8 @@ export interface IOrderRepository {
 
   getPendingOrders(shopId: string): Promise<IOrder[]>;
 
+  getAllOrders(page: number, size: number, status?: string, paymentStatus?: string): Promise<{ orders: IOrder[]; total: number }>;
+
   updateOrder(
     id: string,
     updateData: Partial<IOrder>
@@ -75,6 +77,34 @@ export class OrderRepository implements IOrderRepository {
       .populate("customerId")
       .populate("items.productId")
       .sort({ createdAt: -1 });
+  }
+
+  async getAllOrders(
+    page: number,
+    size: number,
+    status?: string,
+    paymentStatus?: string
+  ): Promise<{ orders: IOrder[]; total: number }> {
+    const query: any = {};
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (paymentStatus) {
+      query.paymentStatus = paymentStatus;
+    }
+
+    const total = await OrderModel.countDocuments(query);
+    const orders = await OrderModel.find(query)
+      .populate("customerId")
+      .populate("shopId")
+      .populate("items.productId")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * size)
+      .limit(size);
+
+    return { orders, total };
   }
 
   async updateOrder(

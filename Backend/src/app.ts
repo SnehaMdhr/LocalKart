@@ -1,6 +1,7 @@
 import express, { Application, Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
+import morgan from 'morgan';
 import dotenv from "dotenv";
 import path from "path";
 import userRoutes from './routes/user.routes';
@@ -10,6 +11,7 @@ import collectionRoutes from './routes/collection.routes';
 import cartRoutes from './routes/cart.routes';
 import orderRoutes from './routes/order.routes';
 import addressRoutes from './routes/address.routes';
+import dashboardRoutes from './routes/dashboard.routes';
 
 dotenv.config();
 // can use .env variable below this
@@ -27,6 +29,7 @@ let corsOptions = {
 // origin: "*", // allow all domain to access your backend server
 app.use(cors(corsOptions)); // implement cors middleware
 
+app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use("/api/auth", userRoutes);
 app.use("/api/shop", shopRoutes);
@@ -35,6 +38,7 @@ app.use("/api/collection", collectionRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/order", orderRoutes);
 app.use("/api/address", addressRoutes);
+app.use("/api/admin/dashboard", dashboardRoutes);
 app.get('/', (req: Request, res: Response) => {
     res.send('Hello, World!');
 });

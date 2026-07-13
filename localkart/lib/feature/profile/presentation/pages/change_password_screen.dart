@@ -152,9 +152,6 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                               if (value == null || value.trim().isEmpty) {
                                 return "Current password is required";
                               }
-                              if (value.trim().length < 6) {
-                                return "Password must be at least 6 characters";
-                              }
                               return null;
                             },
                           ),
@@ -181,6 +178,21 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                               }
                               if (value.trim().length < 8) {
                                 return "Password must be at least 8 characters";
+                              }
+                              if (!RegExp(r'[A-Z]').hasMatch(value)) {
+                                return "Must contain at least 1 uppercase letter";
+                              }
+                              if (!RegExp(r'[a-z]').hasMatch(value)) {
+                                return "Must contain at least 1 lowercase letter";
+                              }
+                              if (!RegExp(r'[0-9]').hasMatch(value)) {
+                                return "Must contain at least 1 number";
+                              }
+                              if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
+                                return "Must contain at least 1 special character";
+                              }
+                              if (value.trim() == _oldPasswordController.text.trim()) {
+                                return "New password must be different from current password";
                               }
                               return null;
                             },

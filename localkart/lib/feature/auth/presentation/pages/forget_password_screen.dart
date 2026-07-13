@@ -190,10 +190,27 @@ class _ForgetPasswordScreenState extends ConsumerState<ForgetPasswordScreen> {
                             prefixIcon: Icons.lock_outline,
                             isPassword: true,
                             controller: _newPasswordController,
-                            validator: (value) =>
-                                (value == null || value.isEmpty)
-                                    ? "Password is required"
-                                    : null,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Password is required";
+                              }
+                              if (value.length < 8) {
+                                return "Password must be at least 8 characters";
+                              }
+                              if (!RegExp(r'[A-Z]').hasMatch(value)) {
+                                return "Must contain at least 1 uppercase letter";
+                              }
+                              if (!RegExp(r'[a-z]').hasMatch(value)) {
+                                return "Must contain at least 1 lowercase letter";
+                              }
+                              if (!RegExp(r'[0-9]').hasMatch(value)) {
+                                return "Must contain at least 1 number";
+                              }
+                              if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
+                                return "Must contain at least 1 special character";
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 20),
 
@@ -213,10 +230,15 @@ class _ForgetPasswordScreenState extends ConsumerState<ForgetPasswordScreen> {
                             prefixIcon: Icons.lock_outline,
                             isPassword: true,
                             controller: _confirmPasswordController,
-                            validator: (value) =>
-                                (value == null || value.isEmpty)
-                                    ? "Please confirm your password"
-                                    : null,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Please confirm your password";
+                              }
+                              if (value != _newPasswordController.text) {
+                                return "Passwords do not match";
+                              }
+                              return null;
+                            },
                           ),
                         ],
 

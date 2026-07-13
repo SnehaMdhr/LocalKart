@@ -5,7 +5,7 @@ export const userSchema = z.object({
     password: z.string().min(8).optional(),
     authProvider: z.enum(["local", "google", "github"]).default("local"),
     name: z.string().optional(),
-    phone: z.string().optional(),
+    phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional(),
     role: z.enum(["Customer","Shopkeeper", "admin"]).default("Customer"),
     imageUrl: z.string().optional(),
     address: z.string().optional(),

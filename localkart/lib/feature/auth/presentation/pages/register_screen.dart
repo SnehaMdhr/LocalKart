@@ -219,12 +219,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                           CustomTextField(
                             controller: phoneController,
-                            hint: "+977 9800000000",
+                            hint: "9800000000",
                             prefixIcon: Icons.phone_outlined,
                             keyboardType: TextInputType.phone,
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
                                 return "Phone number is required";
+                              }
+                              if (!RegExp(r'^\d{10}$').hasMatch(value.trim())) {
+                                return "Phone number must be exactly 10 digits";
                               }
                               return null;
                             },
@@ -254,8 +257,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               if (value == null || value.isEmpty) {
                                 return "Password is required";
                               }
-                              if (value.length < 6) {
-                                return "Password must be at least 6 characters";
+                              if (value.length < 8) {
+                                return "Password must be at least 8 characters";
+                              }
+                              if (!RegExp(r'[A-Z]').hasMatch(value)) {
+                                return "Must contain at least 1 uppercase letter";
+                              }
+                              if (!RegExp(r'[a-z]').hasMatch(value)) {
+                                return "Must contain at least 1 lowercase letter";
+                              }
+                              if (!RegExp(r'[0-9]').hasMatch(value)) {
+                                return "Must contain at least 1 number";
+                              }
+                              if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
+                                return "Must contain at least 1 special character";
                               }
                               return null;
                             },

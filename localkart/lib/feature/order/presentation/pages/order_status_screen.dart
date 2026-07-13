@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:localkart/app/theme/app_colors.dart';
+import 'package:localkart/core/widgets/bottom_navigation_bar_for_customer.dart';
 import 'package:localkart/feature/order/domain/entities/order_entity.dart';
 import 'package:localkart/feature/order/presentation/pages/order_detail_screen.dart';
-import 'package:localkart/feature/product/presentation/pages/home_screen.dart';
 
 class OrderStatusScreen extends StatelessWidget {
   final OrderEntity order;
@@ -331,9 +331,12 @@ class OrderStatusScreen extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton(
                   onPressed: () {
-                    Navigator.push(
+                    Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (_) => HomeScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const BottomNavigationBarForCustomer(),
+                      ),
+                      (route) => false,
                     );
                   },
                   style: OutlinedButton.styleFrom(

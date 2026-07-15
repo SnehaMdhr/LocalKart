@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localkart/app/theme/app_colors.dart';
 
 class SnackbarUtils {
   static void showError(
@@ -10,7 +11,7 @@ class SnackbarUtils {
     _showSnackBar(
       context,
       message,
-      backgroundColor: Colors.red,
+      backgroundColor: AppColors.error,
       icon: Icons.error_outline_rounded,
       duration: duration,
       action: action,
@@ -25,7 +26,7 @@ class SnackbarUtils {
     _showSnackBar(
       context,
       message,
-      backgroundColor: Colors.green,
+      backgroundColor: AppColors.success,
       icon: Icons.check_circle_outline_rounded,
       duration: duration,
     );
@@ -53,7 +54,7 @@ class SnackbarUtils {
     _showSnackBar(
       context,
       message,
-      backgroundColor: Colors.orange,
+      backgroundColor: AppColors.warning,
       icon: Icons.warning_amber_rounded,
       duration: duration,
     );
@@ -76,7 +77,7 @@ class SnackbarUtils {
       SnackBar(
         content: Row(
           children: [
-            Icon(icon, color: Colors.white, size: 24),
+            Icon(icon, color: AppColors.white, size: 24),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -84,7 +85,7 @@ class SnackbarUtils {
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Colors.white,
+                  color: AppColors.white,
                 ),
               ),
             ),

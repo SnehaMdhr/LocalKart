@@ -5,7 +5,7 @@ import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/widgets/title_app_bar.dart';
 import 'package:localkart/feature/order/presentation/pages/vendor_order_screen.dart';
 import 'package:localkart/feature/product/presentation/pages/home_screen.dart';
-import 'package:localkart/feature/profile/presentation/pages/profile_screen.dart';
+import 'package:localkart/feature/profile/presentation/pages/vendor_profile_screen.dart';
 
 class BottomNavigationBarForVendor extends ConsumerStatefulWidget {
   const BottomNavigationBarForVendor({super.key});
@@ -19,69 +19,33 @@ class _BottomNavigationBarForVendorState
     extends ConsumerState<BottomNavigationBarForVendor> {
   int _selectedIndex = 0;
 
-  final List<Widget> screens = const [
+  final List<Widget> _screens = const [
     HomeScreen(),
     VendorOrderScreen(),
-    ProfileScreen(),
+    VendorProfileScreen(),
   ];
 
-  Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    required int index,
-  }) {
-    final bool isSelected = _selectedIndex == index;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: EdgeInsets.symmetric(
-          horizontal: isSelected ? 18 : 10,
-          vertical: 8,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color:
-                  isSelected ? Colors.white : AppColors.textSecondary,
-              size: 24,
-            ),
-
-            if (isSelected) ...[
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
+  static const List<_NavTab> _tabs = [
+    _NavTab(
+      label: 'Dashboard',
+      selectedIcon: Icons.dashboard_rounded,
+      unselectedIcon: Icons.dashboard_outlined,
+    ),
+    _NavTab(
+      label: 'Orders',
+      selectedIcon: Icons.receipt_long_rounded,
+      unselectedIcon: Icons.receipt_long_outlined,
+    ),
+    _NavTab(
+      label: 'Profile',
+      selectedIcon: Icons.person_rounded,
+      unselectedIcon: Icons.person_outline_rounded,
+    ),
+  ];
 
   Future<bool> _onWillPop() async {
     if (_selectedIndex != 0) {
-      setState(() {
-        _selectedIndex = 0;
-      });
+      setState(() => _selectedIndex = 0);
       return false;
     }
 
@@ -103,7 +67,6 @@ class _BottomNavigationBarForVendorState
         ],
       ),
     );
-
     return shouldExit ?? false;
   }
 
@@ -114,9 +77,7 @@ class _BottomNavigationBarForVendorState
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         final shouldPop = await _onWillPop();
-        if (shouldPop) {
-          SystemNavigator.pop();
-        }
+        if (shouldPop) SystemNavigator.pop();
       },
       child: Scaffold(
         appBar: TitleAppBar(
@@ -124,44 +85,177 @@ class _BottomNavigationBarForVendorState
             // TODO: Navigate to Notification Screen
           },
         ),
+        body: IndexedStack(
+          index: _selectedIndex,
+          children: _screens,
+        ),
+        bottomNavigationBar: _buildBottomNav(),
+      ),
+    );
+  }
 
-        body: screens[_selectedIndex],
+  Widget _buildBottomNav() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      height: 72,
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.black.withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: AppColors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: List.generate(_tabs.length, (index) {
+          return Expanded(
+            child: _NavItem(
+              tab: _tabs[index],
+              isSelected: _selectedIndex == index,
+              onTap: () => setState(() => _selectedIndex = index),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
 
-        bottomNavigationBar: SafeArea(
-          child: Container(
-            margin: const EdgeInsets.all(12),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 6,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.black.withOpacity(0.08),
-                  blurRadius: 15,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Data class
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _NavTab {
+  final String label;
+  final IconData selectedIcon;
+  final IconData unselectedIcon;
+
+  const _NavTab({
+    required this.label,
+    required this.selectedIcon,
+    required this.unselectedIcon,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Nav item widget
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _NavItem extends StatefulWidget {
+  final _NavTab tab;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.tab,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  State<_NavItem> createState() => _NavItemState();
+}
+
+class _NavItemState extends State<_NavItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    if (widget.isSelected) {
+      _animController.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _NavItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isSelected != oldWidget.isSelected) {
+      if (widget.isSelected) {
+        _animController.forward();
+      } else {
+        _animController.reverse();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool selected = widget.isSelected;
+
+    return GestureDetector(
+      onTap: widget.onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedBuilder(
+        animation: _animController,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: 1.0 + (_animController.value * 0.05),
+            child: child,
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildNavItem(
-                  icon: Icons.dashboard_rounded,
-                  label: "Dashboard",
-                  index: 0,
+                // ── Icon with green circle background when selected ──
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  width: selected ? 44 : 28,
+                  height: selected ? 44 : 28,
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? AppColors.primaryLight
+                        : Colors.transparent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    selected
+                        ? widget.tab.selectedIcon
+                        : widget.tab.unselectedIcon,
+                    size: selected ? 22 : 24,
+                    color: selected ? AppColors.white : AppColors.grey,
+                  ),
                 ),
-                _buildNavItem(
-                  icon: Icons.receipt_long_rounded,
-                  label: "Orders",
-                  index: 1,
-                ),
-                _buildNavItem(
-                  icon: Icons.person_outline_rounded,
-                  label: "Profile",
-                  index: 2,
+
+                const SizedBox(height: 4),
+
+                // ── Label ──
+                Text(
+                  widget.tab.label,
+                  style: TextStyle(
+                    fontFamily: 'Poppins Medium',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: selected
+                        ? AppColors.primaryLight
+                        : AppColors.grey,
+                    height: 1.2,
+                  ),
                 ),
               ],
             ),

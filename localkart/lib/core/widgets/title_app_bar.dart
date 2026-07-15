@@ -37,8 +37,7 @@ class TitleAppBar extends StatelessWidget
           children: [
             TextSpan(
               text: "Local",
-              style: TextStyle(
-                color: Color(0xFF0F3D1F),
+              style: TextStyle(                  color: AppColors.textPrimary,
                 fontSize: 30,
                 fontWeight: FontWeight.bold,
               ),
@@ -66,7 +65,7 @@ class TitleAppBar extends StatelessWidget
                 onPressed: onNotificationTap,
                 icon: const Icon(
                   Icons.notifications_none_rounded,
-                  color: Colors.black87,
+                  color: AppColors.textPrimary,
                   size: 30,
                 ),
               ),
@@ -79,7 +78,7 @@ class TitleAppBar extends StatelessWidget
                   width: 8,
                   height: 8,
                   decoration: const BoxDecoration(
-                    color: Colors.red,
+                    color: AppColors.error,
                     shape: BoxShape.circle,
                   ),
                 ),

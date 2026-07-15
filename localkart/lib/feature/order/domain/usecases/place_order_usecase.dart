@@ -9,15 +9,27 @@ import 'package:localkart/feature/order/domain/repositories/order_repository.dar
 
 class PlaceOrderParams extends Equatable {
   final String deliveryAddress;
+  final double latitude;
+  final double longitude;
   final String paymentMethod;
+  final String? customerNote;
 
   const PlaceOrderParams({
     required this.deliveryAddress,
+    required this.latitude,
+    required this.longitude,
     required this.paymentMethod,
+    this.customerNote,
   });
 
   @override
-  List<Object?> get props => [deliveryAddress, paymentMethod];
+  List<Object?> get props => [
+    deliveryAddress,
+    latitude,
+    longitude,
+    paymentMethod,
+    customerNote,
+  ];
 }
 
 final placeOrderUsecaseProvider = Provider<PlaceOrderUsecase>((ref) {
@@ -36,7 +48,10 @@ class PlaceOrderUsecase
   Future<Either<Failure, OrderEntity>> call(PlaceOrderParams params) {
     return _orderRepository.placeOrder(
       deliveryAddress: params.deliveryAddress,
+      latitude: params.latitude,
+      longitude: params.longitude,
       paymentMethod: params.paymentMethod,
+      customerNote: params.customerNote,
     );
   }
 }

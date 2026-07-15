@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
+import 'package:localkart/core/utils/snackbar_utils.dart';
 import 'package:localkart/feature/cart/presentation/states/cart_state.dart';
 import 'package:localkart/feature/cart/presentation/view_model/cart_view_model.dart';
 import 'package:localkart/feature/collection/domain/entities/collection_entity.dart';
@@ -60,29 +61,15 @@ class _CollectionProductsDialogState
     if (mounted) {
       final cartState = ref.read(cartViewModelProvider);
       if (cartState.status == CartStatus.loaded) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Added ${product.productName} to cart"),
-            backgroundColor: AppColors.primary,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            duration: const Duration(seconds: 2),
-          ),
+        SnackbarUtils.showSuccess(
+          context,
+          "Added ${product.productName} to cart",
+          duration: const Duration(seconds: 2),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              cartState.errorMessage ?? "Failed to add to cart",
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
+        SnackbarUtils.showError(
+          context,
+          cartState.errorMessage ?? "Failed to add to cart",
         );
       }
     }
@@ -166,21 +153,19 @@ class _CollectionProductsDialogState
     setState(() => _isAddingAll = false);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            failedCount > 0
-                ? "Added $addedCount item${addedCount == 1 ? '' : 's'} ($failedCount failed)"
-                : "Added all $addedCount item${addedCount == 1 ? '' : 's'} to cart!",
-          ),
-          backgroundColor: failedCount > 0 ? AppColors.warning : AppColors.primary,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+      if (failedCount > 0) {
+        SnackbarUtils.showWarning(
+          context,
+          "Added $addedCount item${addedCount == 1 ? '' : 's'} ($failedCount failed)",
           duration: const Duration(seconds: 3),
-        ),
-      );
+        );
+      } else {
+        SnackbarUtils.showSuccess(
+          context,
+          "Added all $addedCount item${addedCount == 1 ? '' : 's'} to cart!",
+          duration: const Duration(seconds: 3),
+        );
+      }
     }
   }
 

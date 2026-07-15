@@ -13,6 +13,9 @@ router.get("/view-my-profile", authorizedMiddleware, authController.getUserById)
 router.put("/update-profile", authorizedMiddleware,uploads.single("imageUrl"),authController.updateUser);
 router.delete("/delete-profile",authorizedMiddleware, authController.deleteUser);
 router.post("/change-password",authorizedMiddleware,authController.changePassword);
+router.post("/request-password-reset", authController.requestPasswordResetOTP);
+router.post("/reset-password", authController.resetPasswordOTP);
+router.post("/google-login", authController.googleLogin);
 
 
 router.get("/", authorizedMiddleware, adminOnlyMiddleware, authController.getAllUsers);

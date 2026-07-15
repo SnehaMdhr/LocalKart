@@ -5,6 +5,7 @@ class SnackbarUtils {
     BuildContext context,
     String message, {
     Duration duration = const Duration(seconds: 2),
+    SnackBarAction? action,
   }) {
     _showSnackBar(
       context,
@@ -12,6 +13,7 @@ class SnackbarUtils {
       backgroundColor: Colors.red,
       icon: Icons.error_outline_rounded,
       duration: duration,
+      action: action,
     );
   }
 
@@ -63,6 +65,7 @@ class SnackbarUtils {
     required Color backgroundColor,
     required IconData icon,
     required Duration duration,
+    SnackBarAction? action,
   }) {
     final messenger = ScaffoldMessenger.of(context);
 
@@ -94,6 +97,7 @@ class SnackbarUtils {
         ),
         margin: const EdgeInsets.all(16),
         duration: duration,
+        action: action,
       ),
     );
   }

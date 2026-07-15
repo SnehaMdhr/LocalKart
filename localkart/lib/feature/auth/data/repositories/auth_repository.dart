@@ -141,4 +141,84 @@ class AuthRepository implements IAuthRepository {
       }
     }
   }
+
+  @override
+  Future<Either<Failure, void>> requestPasswordResetOtp(String email) async {
+    if (!await _networkInfo.isConnected) {
+      return Left(NetworkFailure(message: "No internet connection"));
+    }
+    try {
+      await _authRemoteDataSource.requestPasswordResetOtp(email);
+      return const Right(null);
+    } on DioException catch (e) {
+      return left(
+        ApiFailure(
+          message: e.response?.data["message"] ?? "Failed to send OTP",
+          statusCode: e.response?.statusCode,
+        ),
+      );
+    } catch (e) {
+      return Left(ApiFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> resetPassword({
+    required String email,
+    required String otp,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    if (!await _networkInfo.isConnected) {
+      return Left(NetworkFailure(message: "No internet connection"));
+    }
+    try {
+      await _authRemoteDataSource.resetPassword(
+        email: email,
+        otp: otp,
+        newPassword: newPassword,
+        confirmPassword: confirmPassword,
+      );
+      return const Right(null);
+    } on DioException catch (e) {
+      return left(
+        ApiFailure(
+          message: e.response?.data["message"] ?? "Failed to reset password",
+          statusCode: e.response?.statusCode,
+        ),
+      );
+    } catch (e) {
+      return Left(ApiFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, AuthEntity>> loginWithGoogle(String idToken) async {
+    if (await _networkInfo.isConnected) {
+      try {
+        final apiModel = await _authRemoteDataSource.loginWithGoogle(idToken);
+
+        if (apiModel != null) {
+          final entity = apiModel.toEntity();
+          return Right(entity);
+        }
+
+        return Left(ApiFailure(message: "Google login failed"));
+      } on DioException catch (e) {
+        return left(
+          ApiFailure(
+            message: e.response?.data["message"] ?? "Google Login Failed",
+            statusCode: e.response?.statusCode,
+          ),
+        );
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    } else {
+      return Left(
+        LocalDatabaseFailure(message: "Internet required for Google login"),
+      );
+    }
+  }
+
 }

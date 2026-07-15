@@ -38,13 +38,19 @@ class OrderRepository implements IOrderRepository {
   @override
   Future<Either<Failure, OrderEntity>> placeOrder({
     required String deliveryAddress,
+    required double latitude,
+    required double longitude,
     required String paymentMethod,
+    String? customerNote,
   }) async {
     if (await _networkInfo.isConnected) {
       try {
         final result = await _remoteDatasource.placeOrder(
           deliveryAddress: deliveryAddress,
+          latitude: latitude,
+          longitude: longitude,
           paymentMethod: paymentMethod,
+          customerNote: customerNote,
         );
 
         if (result == null) {
@@ -88,6 +94,28 @@ class OrderRepository implements IOrderRepository {
       }
     } else {
       return _getOrdersFromLocal(null);
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<OrderEntity>>> getPendingOrders() async {
+    if (await _networkInfo.isConnected) {
+      try {
+        final result = await _remoteDatasource.getPendingOrders();
+        return Right(OrderApiModel.toEntityList(result));
+      } on DioException catch (e) {
+        return Left(
+          ApiFailure(
+            message:
+                e.response?.data["message"] ?? "Failed to fetch pending orders",
+            statusCode: e.response?.statusCode,
+          ),
+        );
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    } else {
+      return Left(NetworkFailure());
     }
   }
 
@@ -170,10 +198,16 @@ class OrderRepository implements IOrderRepository {
   }
 
   @override
-  Future<Either<Failure, OrderEntity>> acceptOrder(String orderId) async {
+  Future<Either<Failure, OrderEntity>> acceptOrder({
+    required String orderId,
+    int? estimatedDeliveryTime,
+  }) async {
     if (await _networkInfo.isConnected) {
       try {
-        final result = await _remoteDatasource.acceptOrder(orderId);
+        final result = await _remoteDatasource.acceptOrder(
+          orderId: orderId,
+          estimatedDeliveryTime: estimatedDeliveryTime,
+        );
 
         if (result == null) {
           return Left(ApiFailure(message: "Failed to accept order"));
@@ -247,6 +281,57 @@ class OrderRepository implements IOrderRepository {
           ApiFailure(
             message: e.response?.data["message"] ??
                 "Failed to update order status",
+            statusCode: e.response?.statusCode,
+          ),
+        );
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    } else {
+      return Left(NetworkFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> getOrderEtd(String orderId) async {
+    if (await _networkInfo.isConnected) {
+      try {
+        final result = await _remoteDatasource.getOrderEtd(orderId);
+        if (result == null) {
+          return Left(ApiFailure(message: "Failed to get ETD"));
+        }
+        return Right(result);
+      } on DioException catch (e) {
+        return Left(
+          ApiFailure(
+            message: e.response?.data["message"] ?? "Failed to get ETD",
+            statusCode: e.response?.statusCode,
+          ),
+        );
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    } else {
+      return Left(NetworkFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, OrderEntity>> markOrderPaid(String orderId) async {
+    if (await _networkInfo.isConnected) {
+      try {
+        final result = await _remoteDatasource.markOrderPaid(orderId);
+
+        if (result == null) {
+          return Left(ApiFailure(message: "Failed to mark order as paid"));
+        }
+
+        return Right(result.toEntity());
+      } on DioException catch (e) {
+        return Left(
+          ApiFailure(
+            message: e.response?.data["message"] ??
+                "Failed to mark order as paid",
             statusCode: e.response?.statusCode,
           ),
         );

@@ -20,21 +20,33 @@ class OrderHiveModelAdapter extends TypeAdapter<OrderHiveModel> {
       orderId: fields[0] as String?,
       customerId: fields[1] as String?,
       shopId: fields[2] as String?,
+      orderNumber: fields[11] as String?,
       items: (fields[3] as List).cast<OrderItemHiveModel>(),
       totalAmount: (fields[4] as num).toInt(),
       deliveryAddress: fields[5] as String,
+      latitude: (fields[12] as num?)?.toDouble(),
+      longitude: (fields[13] as num?)?.toDouble(),
       paymentMethod: fields[6] as String,
       paymentStatus: fields[7] as String,
       status: fields[8] as String,
+      customerNote: fields[14] as String?,
+      estimatedDeliveryTime: (fields[15] as num?)?.toInt(),
       createdAt: fields[9] as String?,
       updatedAt: fields[10] as String?,
+      customerName: fields[16] as String?,
+      customerAddress: fields[17] as String?,
+      customerPhone: fields[18] as String?,
+      vendorName: fields[19] as String?,
+      shopName: fields[20] as String?,
+      shopAddress: fields[21] as String?,
+      shopPhone: fields[22] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, OrderHiveModel obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(23)
       ..writeByte(0)
       ..write(obj.orderId)
       ..writeByte(1)
@@ -56,7 +68,31 @@ class OrderHiveModelAdapter extends TypeAdapter<OrderHiveModel> {
       ..writeByte(9)
       ..write(obj.createdAt)
       ..writeByte(10)
-      ..write(obj.updatedAt);
+      ..write(obj.updatedAt)
+      ..writeByte(11)
+      ..write(obj.orderNumber)
+      ..writeByte(12)
+      ..write(obj.latitude)
+      ..writeByte(13)
+      ..write(obj.longitude)
+      ..writeByte(14)
+      ..write(obj.customerNote)
+      ..writeByte(15)
+      ..write(obj.estimatedDeliveryTime)
+      ..writeByte(16)
+      ..write(obj.customerName)
+      ..writeByte(17)
+      ..write(obj.customerAddress)
+      ..writeByte(18)
+      ..write(obj.customerPhone)
+      ..writeByte(19)
+      ..write(obj.vendorName)
+      ..writeByte(20)
+      ..write(obj.shopName)
+      ..writeByte(21)
+      ..write(obj.shopAddress)
+      ..writeByte(22)
+      ..write(obj.shopPhone);
   }
 
   @override

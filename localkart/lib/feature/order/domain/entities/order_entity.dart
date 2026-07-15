@@ -39,54 +39,106 @@ class OrderEntity extends Equatable {
   final String? orderId;
   final String? customerId;
   final String? shopId;
+  final String? orderNumber;
   final List<OrderItemEntity> items;
   final int totalAmount;
   final String deliveryAddress;
+  final double? latitude;
+  final double? longitude;
   final String paymentMethod;
   final String paymentStatus;
   final String status;
+  final String? customerNote;
+  final int? estimatedDeliveryTime;
   final String? createdAt;
   final String? updatedAt;
+
+  // Customer details (from populated customerId)
+  final String? customerName;
+  final String? customerAddress;
+  final String? customerPhone;
+
+  // Vendor/shop details (from populated shopId)
+  final String? vendorName;
+  final String? shopName;
+  final String? shopAddress;
+  final String? shopPhone;
 
   const OrderEntity({
     this.orderId,
     this.customerId,
     this.shopId,
+    this.orderNumber,
     this.items = const [],
     this.totalAmount = 0,
     this.deliveryAddress = '',
+    this.latitude,
+    this.longitude,
     this.paymentMethod = 'Cash on Delivery',
     this.paymentStatus = 'Pending',
     this.status = 'Pending',
+    this.customerNote,
+    this.estimatedDeliveryTime,
     this.createdAt,
     this.updatedAt,
+    this.customerName,
+    this.customerAddress,
+    this.customerPhone,
+    this.vendorName,
+    this.shopName,
+    this.shopAddress,
+    this.shopPhone,
   });
 
   OrderEntity copyWith({
     String? orderId,
     String? customerId,
     String? shopId,
+    String? orderNumber,
     List<OrderItemEntity>? items,
     int? totalAmount,
     String? deliveryAddress,
+    double? latitude,
+    double? longitude,
     String? paymentMethod,
     String? paymentStatus,
     String? status,
+    String? customerNote,
+    int? estimatedDeliveryTime,
     String? createdAt,
     String? updatedAt,
+    String? customerName,
+    String? customerAddress,
+    String? customerPhone,
+    String? vendorName,
+    String? shopName,
+    String? shopAddress,
+    String? shopPhone,
   }) {
     return OrderEntity(
       orderId: orderId ?? this.orderId,
       customerId: customerId ?? this.customerId,
       shopId: shopId ?? this.shopId,
+      orderNumber: orderNumber ?? this.orderNumber,
       items: items ?? this.items,
       totalAmount: totalAmount ?? this.totalAmount,
       deliveryAddress: deliveryAddress ?? this.deliveryAddress,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       paymentStatus: paymentStatus ?? this.paymentStatus,
       status: status ?? this.status,
+      customerNote: customerNote ?? this.customerNote,
+      estimatedDeliveryTime: estimatedDeliveryTime ?? this.estimatedDeliveryTime,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      customerName: customerName ?? this.customerName,
+      customerAddress: customerAddress ?? this.customerAddress,
+      customerPhone: customerPhone ?? this.customerPhone,
+      vendorName: vendorName ?? this.vendorName,
+      shopName: shopName ?? this.shopName,
+      shopAddress: shopAddress ?? this.shopAddress,
+      shopPhone: shopPhone ?? this.shopPhone,
     );
   }
 
@@ -95,13 +147,25 @@ class OrderEntity extends Equatable {
     orderId,
     customerId,
     shopId,
+    orderNumber,
     items,
     totalAmount,
     deliveryAddress,
+    latitude,
+    longitude,
     paymentMethod,
     paymentStatus,
     status,
+    customerNote,
+    estimatedDeliveryTime,
     createdAt,
     updatedAt,
+    customerName,
+    customerAddress,
+    customerPhone,
+    vendorName,
+    shopName,
+    shopAddress,
+    shopPhone,
   ];
 }

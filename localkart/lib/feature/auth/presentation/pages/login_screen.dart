@@ -8,6 +8,7 @@ import 'package:localkart/core/widgets/bottom_navigation_bar_for_customer.dart';
 import 'package:localkart/core/widgets/bottom_navigation_bar_for_vendor.dart';
 import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/core/widgets/custom_text_field.dart';
+import 'package:localkart/feature/auth/presentation/pages/forget_password_screen.dart';
 import 'package:localkart/feature/auth/presentation/pages/register_screen.dart';
 import 'package:localkart/feature/auth/presentation/states/auth_state.dart';
 import 'package:localkart/feature/auth/presentation/view_model/auth_view_model.dart';
@@ -24,7 +25,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-   Future<void> _handleLogin() async {
+  Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       await ref
           .read(authViewModelProvider.notifier)
@@ -41,12 +42,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     passwordController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
-     final authState = ref.watch(authViewModelProvider);
+    final authState = ref.watch(authViewModelProvider);
     final isLoading = authState.status == AuthStatus.loading;
 
-     ref.listen<AuthState>(authViewModelProvider, (previous, next) async {
+    ref.listen<AuthState>(authViewModelProvider, (previous, next) async {
       if (next.status == AuthStatus.error) {
         SnackbarUtils.showError(
           context,
@@ -83,24 +85,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           destination = const BottomNavigationBarForVendor();
         }
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => destination),
-        );
-          
+        Navigator.push(context, MaterialPageRoute(builder: (_) => destination));
       }
     });
     return Scaffold(
       body: AppBackground(
-          child:SafeArea(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 20,
-                ),
-                child: Form(
-                  key: _formKey,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+              child: Form(
+                key: _formKey,
                 child: Column(
                   children: [
                     const SizedBox(height: 20),
@@ -116,10 +111,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ],
                       ),
-                      child: Image.asset(
-                        "assets/images/logo.png",
-                        height: 90,
-                      ),
+                      child: Image.asset("assets/images/logo.png", height: 90),
                     ),
 
                     const SizedBox(height: 30),
@@ -169,9 +161,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               "Email Address",
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: TextStyle(fontWeight: FontWeight.w500),
                             ),
                           ),
 
@@ -194,20 +184,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                           /// Password Label
                           Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
-                            children: const [
-                              Text(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
                                 "Password",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style: TextStyle(fontWeight: FontWeight.w500),
                               ),
-                              Text(
-                                "Forgot?",
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w600,
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const ForgetPasswordScreen(),
+                                    ),
+                                  );
+                                },
+                                child: const Text(
+                                  "Forgot Password?",
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ],
@@ -224,6 +222,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               if (value == null || value.isEmpty) {
                                 return "Password is required";
                               }
+                              if (value.length < 8) {
+                                return "Password must be at least 8 characters";
+                              }
+                              if (!RegExp(r'[A-Z]').hasMatch(value)) {
+                                return "Must contain at least 1 uppercase letter";
+                              }
+                              if (!RegExp(r'[a-z]').hasMatch(value)) {
+                                return "Must contain at least 1 lowercase letter";
+                              }
+                              if (!RegExp(r'[0-9]').hasMatch(value)) {
+                                return "Must contain at least 1 number";
+                              }
+                              if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
+                                return "Must contain at least 1 special character";
+                              }
                               return null;
                             },
                           ),
@@ -235,10 +248,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             width: double.infinity,
                             height: 56,
                             child: CustomButton(
-                                text: "Login",
-                                isLoading: isLoading,
-                                onPressed: _handleLogin,
-                              ),
+                              text: "Login",
+                              isLoading: isLoading,
+                              onPressed: _handleLogin,
+                            ),
                           ),
 
                           const SizedBox(height: 24),
@@ -247,19 +260,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           Row(
                             children: [
                               Expanded(
-                                child: Divider(
-                                  color: AppColors.divider,
-                                ),
+                                child: Divider(color: AppColors.divider),
                               ),
                               const Padding(
-                                padding:
-                                    EdgeInsets.symmetric(horizontal: 12),
+                                padding: EdgeInsets.symmetric(horizontal: 12),
                                 child: Text("OR"),
                               ),
                               Expanded(
-                                child: Divider(
-                                  color: AppColors.divider,
-                                ),
+                                child: Divider(color: AppColors.divider),
                               ),
                             ],
                           ),
@@ -268,7 +276,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                           /// Google Button
                           OutlinedButton.icon(
-                            onPressed: () {},
+                            onPressed: () {
+                              ref
+                                  .read(authViewModelProvider.notifier)
+                                  .loginWithGoogle();
+                            },
                             icon: Image.asset(
                               "assets/images/google.png",
                               height: 30,
@@ -281,14 +293,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                             ),
                             style: OutlinedButton.styleFrom(
-                              minimumSize:
-                                  const Size(double.infinity, 56),
-                              side: BorderSide(
-                                color: AppColors.divider,
-                              ),
+                              minimumSize: const Size(double.infinity, 56),
+                              side: BorderSide(color: AppColors.divider),
                               shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(18),
+                                borderRadius: BorderRadius.circular(18),
                               ),
                             ),
                           ),
@@ -297,8 +305,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                           /// Register Navigation
                           Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Text(
                                 "Don't have an account? ",
@@ -311,8 +318,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) =>
-                                          const RegisterScreen(),
+                                      builder: (_) => const RegisterScreen(),
                                     ),
                                   );
                                 },
@@ -335,8 +341,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
             ),
-          ),),
-        
+          ),
+        ),
       ),
     );
   }

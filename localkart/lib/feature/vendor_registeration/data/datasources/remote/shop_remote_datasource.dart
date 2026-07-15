@@ -31,4 +31,29 @@ class ShopRemoteDatasource implements IShopRemoteDatasource {
     }
     return model;
   }
+
+  @override
+  Future<ShopApiModel?> getMyShop() async {
+    final response = await _apiClient.get(ApiEndpoints.myShop);
+
+    if (response.data["success"] == true && response.data["data"] != null) {
+      final data = response.data["data"] as Map<String, dynamic>;
+      return ShopApiModel.fromJson(data);
+    }
+    return null;
+  }
+
+  @override
+  Future<ShopApiModel?> updateShop(ShopApiModel model) async {
+    final response = await _apiClient.put(
+      ApiEndpoints.updateShop,
+      data: model.toJson(),
+    );
+
+    if (response.data["success"] == true && response.data["data"] != null) {
+      final data = response.data["data"] as Map<String, dynamic>;
+      return ShopApiModel.fromJson(data);
+    }
+    return null;
+  }
 }

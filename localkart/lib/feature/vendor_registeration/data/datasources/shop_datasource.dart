@@ -7,4 +7,6 @@ abstract interface class IShopLocalDatasource {
 
 abstract interface class IShopRemoteDatasource {
   Future<ShopApiModel?> registerShop(ShopApiModel model);
+  Future<ShopApiModel?> getMyShop();
+  Future<ShopApiModel?> updateShop(ShopApiModel model);
 }

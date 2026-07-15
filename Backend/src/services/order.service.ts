@@ -1,63 +1,77 @@
 import mongoose from "mongoose";
-import { CreateOrderDto, UpdateOrderStatusDto } from "../dtos/order.dtos";
+import {
+  AcceptOrderDTO,
+  CreateOrderDTO,
+  UpdateOrderStatusDTO,
+} from "../dtos/order.dtos";
 import { HttpError } from "../errors/https-error";
 import { IOrder } from "../model/order.model";
-import { CartRepository } from "../repositories/cart.repository";
 import { OrderRepository } from "../repositories/order.repository";
-import { ShopRepository } from "../repositories/shop.repository";
+import { CartRepository } from "../repositories/cart.repository";
+import { ShopModel } from "../model/shop.model";
+import { calculateDistance, estimateDeliveryTime } from "../utils/distance.util";
 
 const orderRepository = new OrderRepository();
 const cartRepository = new CartRepository();
-const shopRepository = new ShopRepository();
 
 export class OrderService {
+  private generateOrderNumber() {
+    return `LK${Date.now()}`;
+  }
+
   async createOrder(
-    userId: string,
-    data: CreateOrderDto
+    customerId: string,
+    data: CreateOrderDTO
   ): Promise<IOrder> {
-    const cart = await cartRepository.getCartByUserId(userId);
+    const cart = await cartRepository.getCartByUserId(customerId);
 
-    if (!cart) {
-      throw new HttpError(404, "Cart not found");
-    }
-
-    if (cart.items.length === 0) {
+    if (!cart || cart.items.length === 0) {
       throw new HttpError(400, "Cart is empty");
     }
 
-    let totalAmount = 0;
-
+    // Merge duplicate cart items by productId to prevent duplicate entries
+    const mergedMap = new Map<string, { product: any; quantity: number }>();
     for (const item of cart.items) {
-      // item.productId is populated by cart repository, so it's a full product document
-      const product = item.productId as any;
-
-      if (!product || !product._id) {
-        throw new HttpError(404, "Product not found in cart");
+      const product: any = item.productId;
+      const key = product._id.toString();
+      if (mergedMap.has(key)) {
+        mergedMap.get(key)!.quantity += item.quantity;
+      } else {
+        mergedMap.set(key, { product, quantity: item.quantity });
       }
-
-      const price = Number(product.price);
-      if (isNaN(price) || price <= 0) {
-        throw new HttpError(400, `Product "${product.productName || product._id}" has an invalid price`);
-      }
-
-      totalAmount += price * item.quantity;
     }
 
-    // Map items to plain objects to avoid passing populated Mongoose documents
-    const plainItems = cart.items.map((item) => ({
-      productId: (item.productId as any)._id || item.productId,
-      quantity: item.quantity,
-    }));
+    let totalAmount = 0;
+    const items = Array.from(mergedMap.values()).map(({ product, quantity }) => {
+      totalAmount += product.price * quantity;
+      return {
+        productId: product._id,
+        productName: product.productName,
+        price: product.price,
+        quantity,
+      };
+    });
 
     const order = await orderRepository.createOrder({
-      customerId: new mongoose.Types.ObjectId(userId),
-      shopId: null,
-      items: plainItems,
-      totalAmount,
+      customerId: new mongoose.Types.ObjectId(customerId),
+
+      orderNumber: this.generateOrderNumber(),
+
+      items,
+
       deliveryAddress: data.deliveryAddress,
+
+      totalAmount,
+
       paymentMethod: data.paymentMethod,
+
       paymentStatus: "Pending",
+
       status: "Pending",
+
+      rejectedBy: [],
+
+      customerNote: data.customerNote,
     });
 
     await cartRepository.clearCart(cart._id.toString());
@@ -65,154 +79,80 @@ export class OrderService {
     return order;
   }
 
-  async getMyOrders(userId: string): Promise<IOrder[]> {
-    return orderRepository.getOrdersByCustomerId(userId);
+  async getCustomerOrders(
+    customerId: string
+  ): Promise<IOrder[]> {
+    return orderRepository.getOrdersByCustomer(customerId);
   }
 
-  async getOrderById(orderId: string, userId: string, userRole: string): Promise<IOrder> {
+  async getShopOrders(shopId: string): Promise<IOrder[]> {
+    return orderRepository.getOrdersByShop(shopId);
+  }
+
+  async getPendingOrders(shopId: string): Promise<IOrder[]> {
+    return orderRepository.getPendingOrders(shopId);
+  }
+
+  async getOrderById(orderId: string): Promise<IOrder> {
     const order = await orderRepository.getOrderById(orderId);
 
     if (!order) {
       throw new HttpError(404, "Order not found");
     }
 
-    // Customers can only view their own orders
-    if (userRole === "Customer") {
-      if (order.customerId._id.toString() !== userId && order.customerId.toString() !== userId) {
-        throw new HttpError(403, "Forbidden: You can only view your own orders");
-      }
-    }
-
-    // Shopkeepers can view orders assigned to their shop OR
-    // unassigned pending orders (that they haven't rejected)
-    if (userRole === "Shopkeeper") {
-      const shop = await shopRepository.getShopByUserId(userId);
-      if (!shop) {
-        throw new HttpError(403, "Forbidden: No shop associated with your account");
-      }
-
-      const orderShopId = order.shopId
-        ? (order.shopId._id ? order.shopId._id.toString() : order.shopId.toString())
-        : null;
-
-      // Allow if the order is assigned to this shop
-      if (orderShopId === shop._id.toString()) {
-        return order;
-      }
-
-      // Allow if the order is unassigned and pending (not rejected by this shop)
-      if (order.status === "Pending" && !order.shopId) {
-        const rejectedBy = order.rejectedBy || [];
-        const rejectedByIds = rejectedBy.map((r: any) =>
-          r._id ? r._id.toString() : r.toString()
-        );
-        if (!rejectedByIds.includes(shop._id.toString())) {
-          return order;
-        }
-      }
-
-      throw new HttpError(403, "Forbidden: You cannot view this order");
-    }
-
     return order;
+  }
+
+  async acceptOrder(
+    shopId: string,
+    orderId: string,
+    data: AcceptOrderDTO
+  ): Promise<IOrder> {
+    const updated = await orderRepository.acceptOrder(
+      orderId,
+      shopId,
+      data.estimatedDeliveryTime
+    );
+
+    if (!updated) {
+      throw new HttpError(
+        400,
+        "Order already accepted or unavailable"
+      );
+    }
+
+    return updated;
+  }
+
+  async rejectOrder(
+    shopId: string,
+    orderId: string
+  ): Promise<IOrder> {
+    const updated = await orderRepository.rejectOrder(
+      orderId,
+      shopId
+    );
+
+    if (!updated) {
+      throw new HttpError(404, "Order not found");
+    }
+
+    return updated;
   }
 
   async updateStatus(
     orderId: string,
-    data: UpdateOrderStatusDto,
-    userId: string
+    data: UpdateOrderStatusDTO
   ): Promise<IOrder> {
-    const order = await orderRepository.getOrderById(orderId);
-
-    if (!order) {
-      throw new HttpError(404, "Order not found");
-    }
-
-    // Verify the shopkeeper owns the shop assigned to this order
-    const shop = await shopRepository.getShopByUserId(userId);
-    if (!shop) {
-      throw new HttpError(403, "Forbidden: No shop associated with your account");
-    }
-
-    const orderShopId = order.shopId
-      ? (order.shopId._id ? order.shopId._id.toString() : order.shopId.toString())
-      : null;
-
-    if (!orderShopId || orderShopId !== shop._id.toString()) {
-      throw new HttpError(403, "Forbidden: This order is not assigned to your shop");
-    }
-
-    const updatedOrder = await orderRepository.updateOrderStatus(
-      orderId,
-      data.status
-    );
-
-    if (!updatedOrder) {
-      throw new HttpError(404, "Order not found");
-    }
-
-    return updatedOrder;
-  }
-
-  async acceptOrder(
-    orderId: string,
-    userId: string
-  ): Promise<IOrder> {
-    // Look up the shop belonging to this shopkeeper
-    const shop = await shopRepository.getShopByUserId(userId);
-
-    if (!shop) {
-      throw new HttpError(403, "Forbidden: No shop associated with your account");
-    }
-
-    const order = await orderRepository.updateOrder(orderId, {
-      shopId: shop._id,
-      status: "Accepted",
+    const updated = await orderRepository.updateOrder(orderId, {
+      status: data.status,
     });
 
-    if (!order) {
+    if (!updated) {
       throw new HttpError(404, "Order not found");
     }
 
-    return order;
-  }
-
-  async rejectOrder(
-    orderId: string,
-    userId: string
-  ): Promise<IOrder> {
-    // Look up the shop belonging to this shopkeeper
-    const shop = await shopRepository.getShopByUserId(userId);
-
-    if (!shop) {
-      throw new HttpError(403, "Forbidden: No shop associated with your account");
-    }
-
-    // Instead of assigning the order to this shop and marking Rejected,
-    // just add this shop to the rejectedBy array so the order remains
-    // available for other shopkeepers to accept.
-    const order = await orderRepository.addRejectedBy(
-      orderId,
-      shop._id
-    );
-
-    if (!order) {
-      throw new HttpError(404, "Order not found");
-    }
-
-    return order;
-  }
-
-  async getShopOrders(userId: string): Promise<IOrder[]> {
-    const shop = await shopRepository.getShopByUserId(userId);
-
-    if (!shop) {
-      throw new HttpError(403, "Forbidden: No shop associated with your account");
-    }
-
-    // Return both orders assigned to this shop AND unassigned pending
-    // orders that this shop hasn't rejected yet
-    return orderRepository.getOrdersForShop(shop._id.toString());
+    return updated;
   }
 
   async deleteOrder(orderId: string): Promise<void> {
@@ -221,5 +161,101 @@ export class OrderService {
     if (!deleted) {
       throw new HttpError(404, "Order not found");
     }
+  }
+
+  async markOrderPaid(orderId: string): Promise<IOrder> {
+    const updated = await orderRepository.updateOrder(orderId, {
+      paymentStatus: "Paid",
+    });
+
+    if (!updated) {
+      throw new HttpError(404, "Order not found");
+    }
+
+    return updated;
+  }
+
+  async getAllOrdersForAdmin(
+    page: number,
+    size: number,
+    status?: string,
+    paymentStatus?: string
+  ) {
+    const { orders, total } = await orderRepository.getAllOrders(
+      page,
+      size,
+      status,
+      paymentStatus
+    );
+
+    return {
+      data: orders,
+      pagination: {
+        page,
+        size,
+        total,
+        totalPages: Math.ceil(total / size),
+      },
+    };
+  }
+
+  async getEtd(orderId: string): Promise<{ distance: number | null; estimatedMinutes: number | null; available: boolean; reason?: string }> {
+    const order = await orderRepository.getOrderById(orderId);
+
+    if (!order) {
+      throw new HttpError(404, "Order not found");
+    }
+
+    // Get customer delivery coordinates from the order
+    const deliveryAddr = order.deliveryAddress as any;
+    const custLat = deliveryAddr?.latitude;
+    const custLng = deliveryAddr?.longitude;
+
+    if (custLat == null || custLng == null) {
+      return {
+        distance: null,
+        estimatedMinutes: null,
+        available: false,
+        reason: "Customer delivery location coordinates missing from this order"
+      };
+    }
+
+    // Find the shop that accepted this order
+    const shopUserId = order.shopId;
+    if (!shopUserId) {
+      return {
+        distance: null,
+        estimatedMinutes: null,
+        available: false,
+        reason: "Order not yet accepted by any shop"
+      };
+    }
+
+    const shop = await ShopModel.findOne({ userId: shopUserId });
+    if (!shop) {
+      return {
+        distance: null,
+        estimatedMinutes: null,
+        available: false,
+        reason: "Shop profile not found for this vendor"
+      };
+    }
+
+    const shopLat = shop.latitude;
+    const shopLng = shop.longitude;
+
+    if (shopLat == null || shopLng == null) {
+      return {
+        distance: null,
+        estimatedMinutes: null,
+        available: false,
+        reason: "Shop location not set. Vendor needs to update their shop with a map location."
+      };
+    }
+
+    const distance = calculateDistance(custLat, custLng, shopLat, shopLng);
+    const estimatedMinutes = estimateDeliveryTime(distance);
+
+    return { distance, estimatedMinutes, available: true };
   }
 }

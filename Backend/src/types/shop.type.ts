@@ -8,6 +8,10 @@ export const shopSchema = z.object({
   description: z.string().min(10),
   imageUrl: z.string().optional(),
 
+  latitude: z.number().optional(),
+
+  longitude: z.number().optional(),
+
   categories: z.array(z.enum([
     "Fruits & Vegetables",
     "Dairy & Eggs",

@@ -4,12 +4,15 @@ const UserSchema: Schema = new Schema<UserType>(
     {
         email: { type: String, required: true, unique: true, minlength: 5 },
         password: {
-            type: String, required: true, minlength: 8,},
+            type: String, required: false, minlength: 8,},
         name: { type: String },
         role: { type: String, enum: ["Customer","Shopkeeper", "admin"], default: "Customer" },
         imageUrl: { type: String, required: false },
         phone: { type: String, required: false },
         address: { type: String, required: false },
+        authProvider: { type: String, enum: ["local", "google", "github"], default: "local" },
+        otp: { type: String },
+        resetOtpExpiry: { type: Date },
     },
     { timestamps: true } 
 );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
+import 'package:localkart/core/utils/snackbar_utils.dart';
 import 'package:localkart/feature/cart/presentation/states/cart_state.dart';
 import 'package:localkart/feature/cart/presentation/view_model/cart_view_model.dart';
 import 'package:localkart/feature/collection/domain/entities/collection_entity.dart';
@@ -59,18 +60,10 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     setState(() => _isRemovingFromCart = false);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "${widget.product.productName} removed from cart",
-          ),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          duration: const Duration(seconds: 2),
-        ),
+      SnackbarUtils.showError(
+        context,
+        "${widget.product.productName} removed from cart",
+        duration: const Duration(seconds: 2),
       );
     }
   }
@@ -78,12 +71,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   Future<void> _addToCart() async {
     final productId = widget.product.productId;
     if (productId == null || productId.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Product ID is not available"),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      SnackbarUtils.showError(context, "Product ID is not available");
       return;
     }
 
@@ -99,33 +87,17 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     if (mounted) {
       final cartState = ref.read(cartViewModelProvider);
       if (cartState.status == CartStatus.loaded) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "Added $_quantity ${widget.product.unit} of ${widget.product.productName} to cart",
-            ),
-            backgroundColor: AppColors.primary,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            duration: const Duration(seconds: 2),
-          ),
+        SnackbarUtils.showSuccess(
+          context,
+          "Added $_quantity ${widget.product.unit} of ${widget.product.productName} to cart",
+          duration: const Duration(seconds: 2),
         );
         // Reset quantity after successful add
         setState(() => _quantity = 1);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              cartState.errorMessage ?? "Failed to add to cart. Please try again.",
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
+        SnackbarUtils.showError(
+          context,
+          cartState.errorMessage ?? "Failed to add to cart. Please try again.",
         );
       }
     }
@@ -134,12 +106,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   void _showCollectionPicker() {
     final productId = widget.product.productId;
     if (productId == null || productId.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Product ID is not available"),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      SnackbarUtils.showError(context, "Product ID is not available");
       return;
     }
 
@@ -819,22 +786,23 @@ class _CollectionPickerSheetState
                 await ref
                     .read(collectionViewModelProvider.notifier)
                     .addProductToCollection(collectionId, widget.productId);
-                setState(() => _addingCollectionIds.remove(collectionId));
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
+                setState(() => _addingCollectionIds.remove(collectionId));                  if (context.mounted) {
+                    final updatedState = ref.read(collectionViewModelProvider);
+                    if (updatedState.errorMessage != null) {
+                      // API call failed — show error without closing
+                      SnackbarUtils.showError(
+                        context,
+                        updatedState.errorMessage!,
+                      );
+                    } else {
+                      // Success — close sheet and show confirmation
+                      Navigator.pop(context);
+                      SnackbarUtils.showSuccess(
+                        context,
                         "Added to \"${collection.collectionName}\"",
-                      ),
-                      backgroundColor: AppColors.primary,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  );
-                }
+                      );
+                    }
+                  }
               },
         onDoubleTap: () => _showRenameDialog(context, ref, collection),
         child: Container(
@@ -972,17 +940,9 @@ class _CollectionPickerSheetState
                         if (ctx.mounted) {
                           Navigator.pop(ctx);
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Removed from "${collection.collectionName}"',
-                              ),
-                              backgroundColor: AppColors.error,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
+                          SnackbarUtils.showError(
+                            context,
+                            'Removed from "${collection.collectionName}"',
                           );
                         }
                       },
@@ -1063,15 +1023,9 @@ class _CollectionPickerSheetState
                               .createCollection(name);
                           if (ctx.mounted) {
                             Navigator.pop(ctx);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Collection "$name" created!'),
-                                backgroundColor: AppColors.primary,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
+                            SnackbarUtils.showSuccess(
+                              context,
+                              'Collection "$name" created!',
                             );
                           }
                         }
@@ -1162,15 +1116,9 @@ class _CollectionPickerSheetState
                           if (ctx.mounted) {
                             Navigator.pop(ctx);
                             Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Renamed to "$newName"'),
-                                backgroundColor: AppColors.primary,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
+                            SnackbarUtils.showSuccess(
+                              context,
+                              'Renamed to "$newName"',
                             );
                           }
                         } else if (newName == collection.collectionName) {

@@ -4,6 +4,7 @@ import '../../domain/entities/shop_entity.dart';
 enum ShopStatus {
   initial,
   loading,
+  loaded,
   registered,
   error,
 }

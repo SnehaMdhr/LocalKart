@@ -1,13 +1,16 @@
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { UserRepository } from "../repositories/user.repository";
 import { CreateUserDto, LoginUserDTO, UpdateUserDTO } from "../dtos/user.dtos";
 import { HttpError } from "../errors/https-error";
 import { JWT_SECRET } from "../config";
 import { deleteUploadIfExists } from "../middlewares/upload.middleware";
+import { sendEmail } from "../config/email";
+import { OAuth2Client } from "google-auth-library";
+import { UserRepository } from "../repositories/user.repository";
 
 
 let userRepository = new UserRepository();
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export class UserService {
   async createUser(data: CreateUserDto) {
@@ -158,5 +161,103 @@ async getAllUsers(page?: string, size?: string, search?: string) {
     });
 
     return { message: "Password changed successfully" };
+  }
+
+  async sendResetPasswordEmailOTP(email?: string) {
+    if (!email) {
+      throw new HttpError(400, "Email is required");
+    }
+
+    const user = await userRepository.getUserByEmail(email);
+    if (!user) {
+      throw new HttpError(404, "User not found");
+    }
+
+    if (user.otp && user.resetOtpExpiry && user.resetOtpExpiry > new Date()) {
+      return { message: "OTP already sent. Please check your email." };
+    }
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    const expiry = new Date(Date.now() + 10 * 60 * 1000);
+
+    await userRepository.setResetOtp(email, otp, expiry);
+
+    const html = `<p>Your OTP for password reset is:</p>
+                  <h2>${otp}</h2>
+                  <p>This OTP will expire in 10 minutes.</p>`;
+
+    await sendEmail(user.email, "Password Reset OTP", html);
+
+    return { message: "OTP sent successfully" };
+  }
+
+  async resetPasswordOTP(email?: string, otp?: string, newPassword?: string) {
+    if (!email || !otp || !newPassword) {
+      throw new HttpError(400, "Email, OTP and new password are required");
+    }
+
+    const user = await userRepository.getUserByEmail(email);
+
+    if (!user) {
+      throw new HttpError(404, "User not found");
+    }
+
+    if (!user.otp || !user.resetOtpExpiry) {
+      throw new HttpError(400, "OTP not requested");
+    }
+
+    if (user.otp !== otp) {
+      throw new HttpError(400, "Invalid OTP");
+    }
+
+    if (user.resetOtpExpiry < new Date()) {
+      throw new HttpError(400, "OTP expired");
+    }
+    const hashedPassword = await bcryptjs.hash(newPassword, 10);
+
+    await userRepository.updatePasswordByEmail(email, hashedPassword);
+
+    await userRepository.clearResetOtp(email);
+
+    return { message: "Password reset successful" };
+  }
+
+  async googleLogin(token: string) {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+
+    if (!payload?.email) {
+      throw new HttpError(400, "Invalid Google token");
+    }
+
+    const { email, name, picture } = payload;
+
+    let user = await userRepository.getUserByEmail(email);
+
+    if (!user) {
+      user = await userRepository.createUser({
+        email,
+        name,
+        authProvider: "google",
+        role: "Customer",
+        phone: "",
+        imageUrl: picture,
+      });
+    }
+
+    const payloadJwt = {
+      id: user._id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    };
+
+    const jwtToken = jwt.sign(payloadJwt, JWT_SECRET, { expiresIn: "30d" });
+
+    return { token: jwtToken, user };
   }
 }

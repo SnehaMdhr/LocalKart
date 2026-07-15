@@ -14,6 +14,8 @@ class RegisterShopUsecaseParams extends Equatable {
   final String description;
   final List<String> categories;
   final String? imageUrl;
+  final double? latitude;
+  final double? longitude;
 
   const RegisterShopUsecaseParams({
     required this.shopName,
@@ -21,10 +23,12 @@ class RegisterShopUsecaseParams extends Equatable {
     required this.description,
     required this.categories,
     this.imageUrl,
+    this.latitude,
+    this.longitude,
   });
 
   @override
-  List<Object?> get props => [shopName, address, description, categories, imageUrl];
+  List<Object?> get props => [shopName, address, description, categories, imageUrl, latitude, longitude];
 }
 
 final registerShopUsecaseProvider = Provider<RegisterShopUsecase>((ref) {
@@ -46,6 +50,8 @@ class RegisterShopUsecase implements UseCaseWithParams<bool, RegisterShopUsecase
       description: params.description,
       categories: params.categories,
       imageUrl: params.imageUrl,
+      latitude: params.latitude,
+      longitude: params.longitude,
     );
     return _shopRepository.registerShop(entity);
   }

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:localkart/app/theme/app_colors.dart';
+import 'package:localkart/core/utils/snackbar_utils.dart';
 import 'package:localkart/feature/address/domain/entities/address_entity.dart';
 import 'package:localkart/feature/address/presentation/states/address_state.dart';
 import 'package:localkart/feature/address/presentation/view_model/address_view_model.dart';
@@ -31,45 +36,12 @@ class _AddressScreenState extends ConsumerState<AddressScreen> {
   /// Listen for error state changes and show a SnackBar
   void _showErrorSnackBar(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-        duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: 'Dismiss',
-          textColor: AppColors.white,
-          onPressed: () {},
-        ),
-      ),
-    );
+    SnackbarUtils.showError(context, message);
   }
 
   void _showSuccessSnackBar(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: AppColors.white, size: 20),
-            const SizedBox(width: 10),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    SnackbarUtils.showSuccess(context, message);
   }
 
   @override
@@ -587,8 +559,27 @@ class _AddressFormSheet extends ConsumerStatefulWidget {
 class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _addressController;
+  late final TextEditingController _searchController;
+  late final FocusNode _addressFocusNode;
+  final MapController _mapController = MapController();
+  final Geocoding _geocoding = Geocoding();
   String _selectedLabel = 'Home';
   bool _isSubmitting = false;
+
+  // Location & map state
+  bool _isLoadingLocation = true;
+  bool _isReversingGeocoding = false;
+  LatLng _selectedLocation = const LatLng(27.7172, 85.3240); // fallback: Kathmandu
+  LatLng? _currentLocation;
+
+  // Search state (forward geocoding)
+  bool _isSearching = false;
+  List<Location> _searchResults = [];
+
+  // Track whether the user has manually edited the address field.
+  // When false, map movements will auto-fill the address from reverse geocoding.
+  // When true (user has typed/focused + changed the field), we stop overwriting.
+  bool _addressManuallyEdited = false;
 
   @override
   void initState() {
@@ -596,15 +587,263 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
     _addressController = TextEditingController(
       text: widget.isEditing ? widget.address?.fullAddress : '',
     );
+    _searchController = TextEditingController();
+    _addressFocusNode = FocusNode();
+
+    // Detect manual edits: if the user focuses the field and types/edits,
+    // mark it so we don't overwrite their changes on further map movements.
+    _addressController.addListener(() {
+      if (_addressFocusNode.hasFocus && _addressController.text.isNotEmpty) {
+        _addressManuallyEdited = true;
+      }
+    });
+
     if (widget.isEditing && widget.address != null) {
       _selectedLabel = widget.address!.label;
+      _selectedLocation = LatLng(
+        widget.address!.latitude,
+        widget.address!.longitude,
+      );
+      _isLoadingLocation = false;
+    } else {
+      _getCurrentLocation();
     }
   }
 
   @override
   void dispose() {
     _addressController.dispose();
+    _searchController.dispose();
+    _addressFocusNode.dispose();
+    _mapController.dispose();
     super.dispose();
+  }
+
+  // ── Forward geocoding: search for a place ──
+
+  Future<void> _searchLocation(String query) async {
+    if (query.trim().isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
+      return;
+    }
+
+    setState(() => _isSearching = true);
+    try {
+      final locations = await _geocoding.locationFromAddress(query);
+      if (!mounted) return;
+
+      setState(() {
+        _searchResults = locations;
+        _isSearching = false;
+      });
+
+      if (locations.isNotEmpty) {
+        final loc = locations.first;
+        final newLoc = LatLng(loc.latitude, loc.longitude);
+        setState(() {
+          _selectedLocation = newLoc;
+          // Fill the address text with the search query
+          _addressController.text = query;
+          _addressManuallyEdited = true; // don't overwrite on map pan
+        });
+        _mapController.move(newLoc, 15);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isSearching = false);
+    }
+  }
+
+  void _selectSearchResult(int index) {
+    if (index >= _searchResults.length) return;
+    final loc = _searchResults[index];
+    final newLoc = LatLng(loc.latitude, loc.longitude);
+    setState(() {
+      _selectedLocation = newLoc;
+      _addressController.text = _searchController.text.trim();
+      _addressManuallyEdited = true;
+      _searchResults = [];
+    });
+    _mapController.move(newLoc, 15);
+  }
+
+  // ── Current location detection ──
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      // 1. Check if location services are enabled
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          setState(() => _isLoadingLocation = false);
+          _showSnackBar(
+            'Location services are disabled. Please enable them in your device settings.',
+            action: SnackBarAction(
+              label: 'Settings',
+              onPressed: () => Geolocator.openLocationSettings(),
+            ),
+          );
+        }
+        return;
+      }
+
+      // 2. Check and request location permission
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            setState(() => _isLoadingLocation = false);
+            _showSnackBar(
+              'Location permission is required to detect your current address.',
+            );
+          }
+          return;
+        }
+      }
+
+      // 3. Handle permanently denied permission
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          setState(() => _isLoadingLocation = false);
+          _showPermissionDeniedDialog();
+        }
+        return;
+      }
+
+      // 4. Get the current position
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+
+      final latLng = LatLng(position.latitude, position.longitude);
+      if (!mounted) return;
+
+      setState(() {
+        _currentLocation = latLng;
+        _selectedLocation = latLng;
+        _isLoadingLocation = false;
+        // Re-enable auto-fill when the user explicitly requests current location
+        _addressManuallyEdited = false;
+        // Clear search state
+        _searchController.clear();
+        _searchResults = [];
+        _isSearching = false;
+      });
+
+      // Move map to current location (after first frame)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _mapController.move(latLng, 16);
+        }
+      });
+
+      // Reverse geocode to get the address name
+      _reverseGeocode(latLng);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingLocation = false);
+        String msg = 'Could not detect your location. Please try again or type your address manually.';
+        if (e.toString().contains('timeout') || e.toString().contains('Timeout')) {
+          msg = 'Location request timed out. Make sure GPS is enabled and try again.';
+        }
+        _showSnackBar(msg);
+      }
+    }
+  }
+
+  void _showPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.location_off, color: AppColors.error, size: 24),
+            SizedBox(width: 10),
+            Text('Location Permission',
+                style: TextStyle(color: AppColors.textPrimary, fontSize: 18)),
+          ],
+        ),
+        content: const Text(
+          'Location permission has been permanently denied. Please enable it from your device settings to automatically detect your address.',
+          style: TextStyle(color: AppColors.textSecondary, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel',
+                style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Geolocator.openAppSettings();
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+            child: const Text('Open Settings',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSnackBar(String message, {SnackBarAction? action}) {
+    if (!mounted) return;
+    SnackbarUtils.showError(
+      context,
+      message,
+      duration: const Duration(seconds: 5),
+      action: action,
+    );
+  }
+
+  // ── Reverse geocoding: convert coordinates to address ──
+
+  Future<void> _reverseGeocode(LatLng position) async {
+    if (_isReversingGeocoding) return;
+    setState(() => _isReversingGeocoding = true);
+    try {
+      final placemarks = await _geocoding.placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+      if (!mounted) return;
+
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        final parts = <String>[
+          if (place.street != null && place.street!.isNotEmpty) place.street!,
+          if (place.subLocality != null && place.subLocality!.isNotEmpty)
+            place.subLocality!,
+          if (place.locality != null && place.locality!.isNotEmpty)
+            place.locality!,
+          if (place.administrativeArea != null &&
+              place.administrativeArea!.isNotEmpty)
+            place.administrativeArea!,
+          if (place.country != null && place.country!.isNotEmpty)
+            place.country!,
+        ];
+
+        if (parts.isNotEmpty) {
+          final address = parts.join(', ');
+          // Auto-fill if the user hasn't manually edited the address field
+          if (!_addressManuallyEdited) {
+            _addressController.text = address;
+          }
+        }
+      }
+    } catch (_) {
+      // Silent fail — user can type the address manually
+    } finally {
+      if (mounted) setState(() => _isReversingGeocoding = false);
+    }
   }
 
   @override
@@ -618,173 +857,520 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
       ),
       child: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Drag handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // Title
-            Text(
-              widget.isEditing ? "Edit Address" : "Add New Address",
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+              // Title
+              Text(
+                widget.isEditing ? "Edit Address" : "Add New Address",
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
-            // Label Selection
-            const Text(
-              "Address Label",
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+              // ── Search bar (forward geocoding) ──
+              TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: "Search for a place...",
+                  hintStyle: const TextStyle(color: AppColors.textSecondary),
+                  prefixIcon:
+                      const Icon(Icons.search, color: AppColors.textSecondary),
+                  suffixIcon: _isSearching
+                      ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : (_searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear,
+                                  color: AppColors.textSecondary),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchResults = []);
+                              },
+                            )
+                          : null),
+                  filled: true,
+                  fillColor: AppColors.inputFill,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      vertical: 14, horizontal: 16),
+                ),
+                onChanged: _searchLocation,
+                textInputAction: TextInputAction.search,
               ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: ['Home', 'Work', 'Other'].map((label) {
-                final selected = _selectedLabel == label;
-                final color = _getColor(label);
-                return Expanded(
-                  child: Padding(
-                    padding:
-                        EdgeInsets.only(right: label == 'Other' ? 0 : 8),
-                    child: GestureDetector(
-                      onTap: _isSubmitting
-                          ? null
-                          : () => setState(() => _selectedLabel = label),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        decoration: BoxDecoration(
-                          color: selected
-                              ? color.withValues(alpha: 0.15)
-                              : AppColors.inputFill,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: selected ? color : Colors.transparent,
-                            width: 1.5,
+              const SizedBox(height: 10),
+
+              // ── Search results ──
+              if (_searchResults.isNotEmpty)
+                Container(
+                  constraints: const BoxConstraints(maxHeight: 160),
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: _searchResults.length,
+                    separatorBuilder: (_, __) =>
+                        const Divider(height: 1, color: AppColors.divider),
+                    itemBuilder: (context, index) {
+                      final loc = _searchResults[index];
+                      final isSelected = _selectedLocation.latitude ==
+                              loc.latitude &&
+                          _selectedLocation.longitude == loc.longitude;
+                      return InkWell(
+                        onTap: () => _selectSearchResult(index),
+                        borderRadius: index == 0
+                            ? const BorderRadius.vertical(
+                                top: Radius.circular(12))
+                            : index == _searchResults.length - 1
+                                ? const BorderRadius.vertical(
+                                    bottom: Radius.circular(12))
+                                : BorderRadius.zero,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.location_on_outlined,
+                                size: 18,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.textSecondary,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  _searchController.text,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : AppColors.textPrimary,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                "${loc.latitude.toStringAsFixed(4)}, ${loc.longitude.toStringAsFixed(4)}",
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              _getIcon(label),
-                              size: 18,
-                              color: selected
-                                  ? color
-                                  : AppColors.textSecondary,
+                      );
+                    },
+                  ),
+                ),
+              if (_searchResults.isNotEmpty) const SizedBox(height: 10),
+
+              // ── Use My Current Location button ──
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _isLoadingLocation || _isReversingGeocoding
+                      ? null
+                      : () {
+                          setState(() {
+                            _isLoadingLocation = true;
+                            _addressManuallyEdited = false;
+                            _searchController.clear();
+                            _searchResults = [];
+                          });
+                          _getCurrentLocation();
+                        },
+                  icon: _isLoadingLocation
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.my_location, color: AppColors.primary),
+                  label: Text(
+                    _isLoadingLocation
+                        ? "Detecting..."
+                        : "Use My Current Location",
+                    style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // ── Map Picker ──
+              _buildMapSection(),
+              const SizedBox(height: 20),
+
+              // Label Selection
+              const Text(
+                "Address Label",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: ['Home', 'Work', 'Other'].map((label) {
+                  final selected = _selectedLabel == label;
+                  final color = _getColor(label);
+                  return Expanded(
+                    child: Padding(
+                      padding:
+                          EdgeInsets.only(right: label == 'Other' ? 0 : 8),
+                      child: GestureDetector(
+                        onTap: _isSubmitting
+                            ? null
+                            : () => setState(() => _selectedLabel = label),
+                        child: Container(
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? color.withValues(alpha: 0.15)
+                                : AppColors.inputFill,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: selected ? color : Colors.transparent,
+                              width: 1.5,
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              label,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                _getIcon(label),
+                                size: 18,
                                 color: selected
                                     ? color
                                     : AppColors.textSecondary,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 6),
+                              Text(
+                                label,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: selected
+                                      ? color
+                                      : AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 20),
-
-            // Full Address
-            const Text(
-              "Full Address",
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                  );
+                }).toList(),
               ),
-            ),
-            const SizedBox(height: 10),
-            TextFormField(
-              controller: _addressController,
-              maxLines: 3,
-              enabled: !_isSubmitting,
-              decoration: InputDecoration(
-                hintText: "House number, street, area, city...",
-                filled: true,
-                fillColor: AppColors.inputFill,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: AppColors.primary,
-                    width: 1.5,
-                  ),
-                ),
-                contentPadding: const EdgeInsets.all(14),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter your address';
-                }
-                if (value.trim().length < 5) {
-                  return 'Address must be at least 5 characters';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-            // Submit Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isSubmitting ? null : _handleSubmit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.white,
-                  disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
-                  disabledForegroundColor: AppColors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
+              // Full Address
+              const Text(
+                "Full Address",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _addressController,
+                focusNode: _addressFocusNode,
+                maxLines: 3,
+                enabled: !_isSubmitting,
+                decoration: InputDecoration(
+                  hintText: "House number, street, area, city...",
+                  filled: true,
+                  fillColor: AppColors.inputFill,
+                  border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: AppColors.primary,
+                      width: 1.5,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.all(14),
+                  suffixIcon: _isReversingGeocoding
+                      ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        )
+                      : IconButton(
+                          icon: const Icon(Icons.my_location,
+                              color: AppColors.primary),
+                          onPressed: _isSubmitting || _isLoadingLocation
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _isLoadingLocation = true;
+                                    _addressManuallyEdited = false;
+                                    _searchController.clear();
+                                    _searchResults = [];
+                                  });
+                                  _getCurrentLocation();
+                                },
+                          tooltip: "Use current location",
+                        ),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter your address';
+                  }
+                  if (value.trim().length < 5) {
+                    return 'Address must be at least 5 characters';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Coordinates display (subtle)
+              Center(
+                child: Text(
+                  "${_selectedLocation.latitude.toStringAsFixed(5)}, ${_selectedLocation.longitude.toStringAsFixed(5)}",
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
                   ),
                 ),
-                child: _isSubmitting
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(AppColors.white),
+              ),
+              const SizedBox(height: 12),
+
+              // Submit Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isSubmitting ? null : _handleSubmit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.white,
+                    disabledBackgroundColor:
+                        AppColors.primary.withValues(alpha: 0.6),
+                    disabledForegroundColor: AppColors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.white),
+                          ),
+                        )
+                      : Text(
+                          widget.isEditing
+                              ? "Update Address"
+                              : "Save Address",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      )
-                    : Text(
-                        widget.isEditing ? "Update Address" : "Save Address",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMapSection() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: SizedBox(
+        height: 180,
+        child: Stack(
+          children: [
+            // Map
+            FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: _selectedLocation,
+                initialZoom: 15,
+                onMapEvent: (MapEvent event) {
+                  if (event is MapEventMoveEnd) {
+                    final center = _mapController.camera.center;
+                    _selectedLocation = center;
+                    _reverseGeocode(center);
+                  }
+                },
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate:
+                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.localkart.app',
+                ),
+              ],
+            ),
+
+            // Loading overlay
+            if (_isLoadingLocation || _isReversingGeocoding)
+              Container(
+                color: Colors.black26,
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.white,
+                  ),
+                ),
+              )
+            else
+              // Center map pin — stays fixed while the map pans
+              IgnorePointer(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Pin shadow
+                      Container(
+                        width: 12,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.black26,
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
+                      const SizedBox(height: 2),
+                      // Pin icon
+                      const Icon(
+                        Icons.location_on,
+                        size: 42,
+                        color: AppColors.primary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Top gradient hint
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.3),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.touch_app,
+                        size: 14, color: AppColors.white),
+                    const SizedBox(width: 4),
+                    const Text(
+                      "Move the map to pin your location",
+                      style: TextStyle(
+                        color: AppColors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Re-centre button
+            Positioned(
+              right: 8,
+              bottom: 8,
+              child: Material(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(8),
+                elevation: 2,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: _currentLocation != null
+                      ? () {
+                          _mapController.move(_currentLocation!, 16);
+                          _selectedLocation = _currentLocation!;
+                          _addressManuallyEdited = false;
+                          _reverseGeocode(_currentLocation!);
+                        }
+                      : null,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.gps_fixed,
+                      size: 20,
+                      color: _currentLocation != null
+                          ? AppColors.primary
+                          : AppColors.grey,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
@@ -828,16 +1414,15 @@ class _AddressFormSheetState extends ConsumerState<_AddressFormSheet> {
             addressId: widget.address!.addressId ?? '',
             label: _selectedLabel,
             fullAddress: addressText,
-            latitude: widget.address!.latitude,
-            longitude: widget.address!.longitude,
+            latitude: _selectedLocation.latitude,
+            longitude: _selectedLocation.longitude,
           );
     } else {
-      // Default coordinates (Kathmandu) — user can update later via edit
       ref.read(addressViewModelProvider.notifier).createAddress(
             label: _selectedLabel,
             fullAddress: addressText,
-            latitude: 27.7172,
-            longitude: 85.3240,
+            latitude: _selectedLocation.latitude,
+            longitude: _selectedLocation.longitude,
           );
     }
 

@@ -1,5 +1,13 @@
 import z from "zod";
 import { userSchema } from "../types/user.type";
+
+const passwordValidation = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Must contain at least 1 uppercase letter")
+  .regex(/[a-z]/, "Must contain at least 1 lowercase letter")
+  .regex(/[0-9]/, "Must contain at least 1 number")
+  .regex(/[!@#$%^&*(),.?":{}|<>]/, "Must contain at least 1 special character");
+
 export const CreateUserDto = userSchema.pick(
     {
         name:true, 
@@ -9,8 +17,8 @@ export const CreateUserDto = userSchema.pick(
         phone: true,}
 ).extend(
     {
-        password: z.string().min(8),
-        confirmPassword: z.string().min(6)
+        password: passwordValidation,
+        confirmPassword: z.string().min(8)
     }
 ).refine(
     (data) => data.password === data.confirmPassword,
@@ -24,15 +32,15 @@ export type CreateUserDto = z.infer<typeof CreateUserDto>;
 
 export const LoginUserDTO = z.object({
     email: z.email(),
-    password: z.string().min(6)
+    password: z.string().min(8)
 });
 export type LoginUserDTO = z.infer<typeof LoginUserDTO>;
 
 export const UpdateUserDTO = userSchema.omit({ role: true }).partial();
 export type UpdateUserDTO = z.infer<typeof UpdateUserDTO>;
 export const ChangePasswordDTO = z.object({
-    oldPassword: z.string().min(6),
-    newPassword: z.string().min(8),
+    oldPassword: z.string().min(8),
+    newPassword: passwordValidation,
     confirmPassword: z.string().min(8),
 }).refine(
     (data) => data.newPassword === data.confirmPassword,
@@ -44,4 +52,23 @@ export const ChangePasswordDTO = z.object({
 
 export type ChangePasswordDTO = z.infer<typeof ChangePasswordDTO>;
 
+export const ResetPasswordDTO = z.object({
+    email: z.string().email(),
+    otp: z.string().length(6),
+    newPassword: passwordValidation,
+    confirmPassword: z.string().min(8),
+}).refine(
+    (data) => data.newPassword === data.confirmPassword,
+    {
+        message: "Passwords do not match",
+        path: ["confirmPassword"],
+    }
+);
 
+export type ResetPasswordDTO = z.infer<typeof ResetPasswordDTO>;
+
+export const GoogleLoginDTO = z.object({
+    token: z.string().min(10)
+});
+
+export type GoogleLoginDTO = z.infer<typeof GoogleLoginDTO>;

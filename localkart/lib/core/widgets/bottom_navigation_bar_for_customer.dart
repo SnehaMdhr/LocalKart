@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/widgets/title_app_bar.dart';
@@ -78,59 +79,99 @@ class _BottomNavigationBarForCustomerState
     );
   }
 
+  Future<bool> _onWillPop() async {
+    if (_selectedIndex != 0) {
+      setState(() {
+        _selectedIndex = 0;
+      });
+      return false;
+    }
+
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Exit App'),
+        content: const Text('Do you want to exit the app?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Yes', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+
+    return shouldExit ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: TitleAppBar(
-        onNotificationTap: () {
-          // TODO: Navigate to Notification Screen
-        },
-      ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldPop = await _onWillPop();
+        if (shouldPop) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        appBar: TitleAppBar(
+          onNotificationTap: () {
+            // TODO: Navigate to Notification Screen
+          },
+        ),
 
-      body: screens[_selectedIndex],
+        body: screens[_selectedIndex],
 
-      bottomNavigationBar: SafeArea(
-        child: Container(
-          margin: const EdgeInsets.all(12),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 8,
-            vertical: 6,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.black.withOpacity(0.08),
-                blurRadius: 15,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(
-                icon: Icons.home_rounded,
-                label: "Home",
-                index: 0,
-              ),
-              _buildNavItem(
-                icon: Icons.search_rounded,
-                label: "Discover",
-                index: 1,
-              ),
-              _buildNavItem(
-                icon: Icons.shopping_cart_outlined,
-                label: "Cart",
-                index: 2,
-              ),
-              _buildNavItem(
-                icon: Icons.person_outline_rounded,
-                label: "Profile",
-                index: 3,
-              ),
-            ],
+        bottomNavigationBar: SafeArea(
+          child: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 6,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.black.withOpacity(0.08),
+                  blurRadius: 15,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(
+                  icon: Icons.home_rounded,
+                  label: "Home",
+                  index: 0,
+                ),
+                _buildNavItem(
+                  icon: Icons.search_rounded,
+                  label: "Discover",
+                  index: 1,
+                ),
+                _buildNavItem(
+                  icon: Icons.shopping_cart_outlined,
+                  label: "Cart",
+                  index: 2,
+                ),
+                _buildNavItem(
+                  icon: Icons.person_outline_rounded,
+                  label: "Profile",
+                  index: 3,
+                ),
+              ],
+            ),
           ),
         ),
       ),

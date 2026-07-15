@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/utils/snackbar_utils.dart';
 import 'package:localkart/core/widgets/app_background.dart';
@@ -37,6 +41,20 @@ class _RegisterShopScreenState extends ConsumerState<RegisterShopScreen> {
     "Baby & Pet",
   ];
 
+  // Map & location state
+  final MapController _mapController = MapController();
+  final Geocoding _geocoding = Geocoding();
+  final TextEditingController _searchController = TextEditingController();
+  late final FocusNode _addressFocusNode;
+
+  LatLng _selectedLocation = const LatLng(27.7172, 85.3240); // fallback: Kathmandu
+  LatLng? _currentLocation;
+  bool _isLoadingLocation = false;
+  bool _isReversingGeocoding = false;
+  bool _isSearching = false;
+  List<Location> _searchResults = [];
+  bool _addressManuallyEdited = false;
+
   Future<void> _handleRegister() async {
     if (_formKey.currentState!.validate()) {
       if (selectedCategories.isEmpty) {
@@ -51,8 +69,21 @@ class _RegisterShopScreenState extends ConsumerState<RegisterShopScreen> {
             address: addressController.text.trim(),
             description: descriptionController.text.trim(),
             categories: selectedCategories.toList(),
+            latitude: _selectedLocation.latitude,
+            longitude: _selectedLocation.longitude,
           );
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _addressFocusNode = FocusNode();
+    addressController.addListener(() {
+      if (_addressFocusNode.hasFocus && addressController.text.isNotEmpty) {
+        _addressManuallyEdited = true;
+      }
+    });
   }
 
   @override
@@ -60,7 +91,192 @@ class _RegisterShopScreenState extends ConsumerState<RegisterShopScreen> {
     shopNameController.dispose();
     addressController.dispose();
     descriptionController.dispose();
+    _searchController.dispose();
+    _addressFocusNode.dispose();
+    _mapController.dispose();
     super.dispose();
+  }
+
+  // ── Forward geocoding: search for a place ──
+  Future<void> _searchLocation(String query) async {
+    if (query.trim().isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
+      return;
+    }
+    setState(() => _isSearching = true);
+    try {
+      final locations = await _geocoding.locationFromAddress(query);
+      if (!mounted) return;
+      setState(() {
+        _searchResults = locations;
+        _isSearching = false;
+      });
+      if (locations.isNotEmpty) {
+        final loc = locations.first;
+        final newLoc = LatLng(loc.latitude, loc.longitude);
+        setState(() {
+          _selectedLocation = newLoc;
+          addressController.text = query;
+          _addressManuallyEdited = true;
+        });
+        _mapController.move(newLoc, 15);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isSearching = false);
+    }
+  }
+
+  void _selectSearchResult(int index) {
+    if (index >= _searchResults.length) return;
+    final loc = _searchResults[index];
+    final newLoc = LatLng(loc.latitude, loc.longitude);
+    setState(() {
+      _selectedLocation = newLoc;
+      addressController.text = _searchController.text.trim();
+      _addressManuallyEdited = true;
+      _searchResults = [];
+    });
+    _mapController.move(newLoc, 15);
+  }
+
+  // ── Current location detection ──
+  Future<void> _getCurrentLocation() async {
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          setState(() => _isLoadingLocation = false);
+          SnackbarUtils.showError(
+            context,
+            'Location services are disabled. Please enable them in your device settings.',
+            action: SnackBarAction(
+              label: 'Settings',
+              onPressed: () => Geolocator.openLocationSettings(),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Check and request location permission
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            setState(() => _isLoadingLocation = false);
+            SnackbarUtils.showError(context, 'Location permission is required to detect your address.');
+          }
+          return;
+        }
+      }
+
+      // Handle permanently denied permission
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          setState(() => _isLoadingLocation = false);
+          _showPermissionDeniedDialog();
+        }
+        return;
+      }
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+      final latLng = LatLng(position.latitude, position.longitude);
+      if (!mounted) return;
+      setState(() {
+        _currentLocation = latLng;
+        _selectedLocation = latLng;
+        _isLoadingLocation = false;
+        _addressManuallyEdited = false;
+        _searchController.clear();
+        _searchResults = [];
+        _isSearching = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _mapController.move(latLng, 16);
+      });
+      _reverseGeocode(latLng);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingLocation = false);
+        String msg = 'Could not detect your location. Please try again or type your address manually.';
+        if (e.toString().contains('timeout') || e.toString().contains('Timeout')) {
+          msg = 'Location request timed out. Make sure GPS is enabled and try again.';
+        }
+        SnackbarUtils.showError(context, msg);
+      }
+    }
+  }
+
+  // ── Reverse geocoding ──
+  Future<void> _reverseGeocode(LatLng position) async {
+    if (_isReversingGeocoding) return;
+    setState(() => _isReversingGeocoding = true);
+    try {
+      final placemarks = await _geocoding.placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+      if (!mounted) return;
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        final parts = <String>[
+          if (place.street != null && place.street!.isNotEmpty) place.street!,
+          if (place.subLocality != null && place.subLocality!.isNotEmpty) place.subLocality!,
+          if (place.locality != null && place.locality!.isNotEmpty) place.locality!,
+          if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) place.administrativeArea!,
+          if (place.country != null && place.country!.isNotEmpty) place.country!,
+        ];
+        if (parts.isNotEmpty && !_addressManuallyEdited) {
+          addressController.text = parts.join(', ');
+        }
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _isReversingGeocoding = false);
+  }
+
+  void _showPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.location_off, color: AppColors.error, size: 24),
+            SizedBox(width: 10),
+            Text('Location Permission',
+                style: TextStyle(color: AppColors.textPrimary, fontSize: 18)),
+          ],
+        ),
+        content: const Text(
+          'Location permission has been permanently denied. Please enable it from your device settings to automatically detect your address.',
+          style: TextStyle(color: AppColors.textSecondary, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel',
+                style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Geolocator.openAppSettings();
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+            child: const Text('Open Settings',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -250,7 +466,8 @@ class _RegisterShopScreenState extends ConsumerState<RegisterShopScreen> {
                                   );
                                 }).toList(),
                               ),
-                              if (selectedCategories.isNotEmpty) ...[const SizedBox(height: 8),
+                              if (selectedCategories.isNotEmpty) ...[
+                                const SizedBox(height: 8),
                                 Text(
                                   "${selectedCategories.length} selected",
                                   style: const TextStyle(
@@ -265,23 +482,234 @@ class _RegisterShopScreenState extends ConsumerState<RegisterShopScreen> {
 
                         const SizedBox(height: 20),
 
+                        /// ── Location section (search + map) ──
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            "Shop Location",
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Search bar
+                        TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: "Search for a place...",
+                            hintStyle: const TextStyle(color: AppColors.textSecondary),
+                            prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+                            suffixIcon: _isSearching
+                                ? const Padding(
+                                    padding: EdgeInsets.all(12),
+                                    child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                                  )
+                                : (_searchController.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear, color: AppColors.textSecondary),
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          setState(() => _searchResults = []);
+                                        },
+                                      )
+                                    : null),
+                            filled: true,
+                            fillColor: AppColors.inputFill,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                          ),
+                          onChanged: _searchLocation,
+                          textInputAction: TextInputAction.search,
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Search results
+                        if (_searchResults.isNotEmpty)
+                          Container(
+                            constraints: const BoxConstraints(maxHeight: 140),
+                            decoration: BoxDecoration(
+                              color: AppColors.card,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.divider),
+                            ),
+                            child: ListView.separated(
+                              shrinkWrap: true,
+                              itemCount: _searchResults.length,
+                              separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.divider),
+                              itemBuilder: (context, index) {
+                                final loc = _searchResults[index];
+                                return InkWell(
+                                  onTap: () => _selectSearchResult(index),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.location_on_outlined, size: 18, color: AppColors.textSecondary),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            _searchController.text,
+                                            style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+                                          ),
+                                        ),
+                                        Text(
+                                          "${loc.latitude.toStringAsFixed(4)}, ${loc.longitude.toStringAsFixed(4)}",
+                                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        if (_searchResults.isNotEmpty) const SizedBox(height: 10),
+
+                        // Use My Current Location button
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _isLoadingLocation || _isReversingGeocoding
+                                ? null
+                                : () {
+                                    setState(() {
+                                      _isLoadingLocation = true;
+                                      _addressManuallyEdited = false;
+                                      _searchController.clear();
+                                      _searchResults = [];
+                                    });
+                                    _getCurrentLocation();
+                                  },
+                            icon: _isLoadingLocation
+                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                                : const Icon(Icons.my_location, color: AppColors.primary),
+                            label: Text(
+                              _isLoadingLocation ? "Detecting..." : "Use My Current Location",
+                              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: AppColors.primary),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Map
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: SizedBox(
+                            height: 170,
+                            child: Stack(
+                              children: [
+                                FlutterMap(
+                                  mapController: _mapController,
+                                  options: MapOptions(
+                                    initialCenter: _selectedLocation,
+                                    initialZoom: 15,
+                                    onMapEvent: (MapEvent event) {
+                                      if (event is MapEventMoveEnd) {
+                                        final center = _mapController.camera.center;
+                                        _selectedLocation = center;
+                                        _reverseGeocode(center);
+                                      }
+                                    },
+                                  ),
+                                  children: [
+                                    TileLayer(
+                                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                      userAgentPackageName: 'com.localkart.app',
+                                    ),
+                                  ],
+                                ),
+                                if (_isLoadingLocation || _isReversingGeocoding)
+                                  Container(
+                                    color: Colors.black26,
+                                    child: const Center(child: CircularProgressIndicator(color: AppColors.white)),
+                                  )
+                                else
+                                  IgnorePointer(
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(width: 12, height: 4,
+                                              decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(2))),
+                                          const SizedBox(height: 2),
+                                          const Icon(Icons.location_on, size: 40, color: AppColors.primary),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                // Re-centre button
+                                Positioned(
+                                  right: 8,
+                                  bottom: 8,
+                                  child: Material(
+                                    color: AppColors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    elevation: 2,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(8),
+                                      onTap: _currentLocation != null
+                                          ? () {
+                                              _mapController.move(_currentLocation!, 16);
+                                              _selectedLocation = _currentLocation!;
+                                              _addressManuallyEdited = false;
+                                              _reverseGeocode(_currentLocation!);
+                                            }
+                                          : null,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        child: Icon(
+                                          Icons.gps_fixed,
+                                          size: 20,
+                                          color: _currentLocation != null ? AppColors.primary : AppColors.grey,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Coordinates display
+                        Center(
+                          child: Text(
+                            "${_selectedLocation.latitude.toStringAsFixed(5)}, ${_selectedLocation.longitude.toStringAsFixed(5)}",
+                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
                         /// Address
                         const Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
                             "Full Address",
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
-
                         const SizedBox(height: 8),
 
-                        CustomTextField(
+                        TextFormField(
                           controller: addressController,
-                          hint: "Enter your complete shop address",
-                          prefixIcon: Icons.location_on_outlined,
+                          focusNode: _addressFocusNode,
+                          maxLines: 2,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: AppColors.inputFill,
+                            hintText: "Enter your complete shop address",
+                            prefixIcon: const Icon(Icons.location_on_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(18),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return "Address is required";

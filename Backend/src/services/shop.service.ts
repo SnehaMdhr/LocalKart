@@ -4,8 +4,9 @@ import { CreateShopDto, UpdateShopDto } from "../dtos/shop.dtos";
 import { HttpError } from "../errors/https-error";
 import { IShop } from "../model/shop.model";
 import { ShopRepository } from "../repositories/shop.repository";
-import { UserRepository } from "../repositories/user.repository";
+
 import { deleteUploadIfExists } from "../middlewares/upload.middleware";
+import { UserRepository } from "../repositories/user.repository";
 
 const shopRepository = new ShopRepository();
 const userRepository = new UserRepository();
@@ -145,8 +146,10 @@ export class ShopService {
         }
       );
 
+    // shop.userId is populated by getShopById, extract the _id
+    const shopkeeperId = (shop.userId as any)._id || shop.userId;
     await userRepository.updateUser(
-      shop.userId.toString(),
+      shopkeeperId,
       {
         role: "Shopkeeper"
       }
@@ -192,8 +195,9 @@ export class ShopService {
       );
     }
 
+    const customerId = (shop.userId as any)._id || shop.userId;
     await userRepository.updateUser(
-      shop.userId.toString(),
+      customerId,
       {
         role: "Customer"
       }

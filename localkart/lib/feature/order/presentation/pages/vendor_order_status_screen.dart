@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
+import 'package:localkart/core/utils/snackbar_utils.dart';
 import 'package:localkart/feature/order/domain/entities/order_entity.dart';
 import 'package:localkart/feature/order/presentation/view_model/order_view_model.dart';
 
@@ -17,11 +18,40 @@ class VendorOrderStatusScreen extends ConsumerStatefulWidget {
 class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScreen> {
   bool _isProcessing = false;
 
+  bool _shouldShowEtd(String status) {
+    const etdStatuses = ["Out for Delivery", "Delivered"];
+    return etdStatuses.contains(status);
+  }
+
   @override
   Widget build(BuildContext context) {
     final orderState = ref.watch(orderViewModelProvider);
     // Use the latest order from state if available, otherwise the initial one
     final order = orderState.currentOrder ?? widget.order;
+
+    // Reactively fetch ETD when order status changes to Out for Delivery or Delivered
+    ref.listen(orderViewModelProvider, (previous, next) {
+      final prevStatus = previous?.currentOrder?.status ?? widget.order.status;
+      final currStatus = next.currentOrder?.status ?? widget.order.status;
+      if (_shouldShowEtd(currStatus) && !_shouldShowEtd(prevStatus)) {
+        final orderId = next.currentOrder?.orderId ?? widget.order.orderId;
+        if (orderId != null) {
+          ref.read(orderViewModelProvider.notifier).getOrderEtd(orderId);
+        }
+      }
+    });
+
+    // Also fetch on initial build if order is already in applicable status
+    if (orderState.etdInfo == null) {
+      final orderId = widget.order.orderId;
+      final currStatus = orderState.currentOrder?.status ?? widget.order.status;
+      if (orderId != null && _shouldShowEtd(currStatus)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(orderViewModelProvider.notifier).getOrderEtd(orderId);
+        });
+      }
+    }
+    final mergedItems = _mergedItems(order);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -45,19 +75,19 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
           const SizedBox(height: 20),
 
           /// Interactive Status Section
-          _buildStatusManagement(order),
+          _buildStatusManagement(order, orderState.etdInfo),
           const SizedBox(height: 24),
 
           /// Customer Info
           _sectionHeader("Customer & Delivery"),
           const SizedBox(height: 12),
-          _buildDeliveryCard(order),
+          _buildCustomerCard(order),
           const SizedBox(height: 24),
 
           /// Items
-          _sectionHeader("Items (${order.items.length})"),
+          _sectionHeader("Items (${mergedItems.length})"),
           const SizedBox(height: 12),
-          ...order.items.map((item) => Padding(
+          ...mergedItems.map((item) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: _buildOrderItem(item),
           )),
@@ -66,7 +96,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
           /// Payment Summary
           _sectionHeader("Payment Summary"),
           const SizedBox(height: 12),
-          _buildPaymentSummary(order),
+          _buildPaymentSummary(order, mergedItems),
           const SizedBox(height: 30),
 
           /// Order ID
@@ -108,11 +138,10 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Order #$shortId",
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary),
-                ),
+              children: [                    Text(
+                      order.orderNumber != null ? "Order #${order.orderNumber}" : "Order #$shortId",
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary),
+                    ),
                 const SizedBox(height: 4),
                 Text(
                   _formatDate(order.createdAt ?? ''),
@@ -127,7 +156,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
     );
   }
 
-  Widget _buildStatusManagement(OrderEntity order) {
+  Widget _buildStatusManagement(OrderEntity order, Map<String, dynamic>? etdInfo) {
     final allStatuses = ["Pending", "Accepted", "Preparing", "Out for Delivery", "Delivered"];
     final currentIndex = allStatuses.indexOf(order.status);
     final isTerminal = ["Delivered", "Rejected", "Cancelled"].contains(order.status);
@@ -188,6 +217,18 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
             }),
 
           const SizedBox(height: 20),
+
+          /// ETD section — shown when Out for Delivery or Delivered
+          if (_shouldShowEtd(order.status) && etdInfo != null && etdInfo['available'] == true) ...[
+            const SizedBox(height: 20),
+            _buildEtdCard(etdInfo, order.status),
+          ] else if (_shouldShowEtd(order.status) && etdInfo == null) ...[
+            const SizedBox(height: 20),
+            _buildEtdLoading(),
+          ] else if (_shouldShowEtd(order.status) && etdInfo != null && etdInfo['available'] == false) ...[
+            const SizedBox(height: 20),
+            _buildEtdUnavailable(etdInfo),
+          ],
 
           /// Action buttons at bottom
           if (!isTerminal) ...[
@@ -404,7 +445,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
     );
   }
 
-  Widget _buildDeliveryCard(OrderEntity order) {
+  Widget _buildCustomerCard(OrderEntity order) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -414,6 +455,88 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
       ),
       child: Column(
         children: [
+          /// Customer Info
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryExtraLight,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.person_outline, color: AppColors.primary, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Customer", style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    const SizedBox(height: 2),
+                    Text(
+                      order.customerName ?? "Customer",
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColors.textPrimary),
+                    ),
+                    if (order.customerAddress != null && order.customerAddress!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              order.customerAddress!,
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (order.customerPhone != null && order.customerPhone!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.phone_outlined, size: 14, color: AppColors.textSecondary),
+                          const SizedBox(width: 4),
+                          Text(
+                            order.customerPhone!,
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (order.customerNote != null && order.customerNote!.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.notes, size: 14, color: AppColors.warning),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                order.customerNote!,
+                                style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontStyle: FontStyle.italic),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 24),
+
           /// Payment Method
           Row(
             children: [
@@ -457,6 +580,30 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
           ),
           const Divider(height: 24),
 
+          /// Mark as Paid — only for digital Pay on Delivery
+          if (_shouldShowMarkPaid(order)) ...[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isProcessing ? null : () => _markOrderPaid(order),
+                icon: _isProcessing
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.check_circle_outline, size: 18),
+                label: Text(
+                  _isProcessing ? "Confirming..." : "Mark as Paid",
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
           /// Delivery Address
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -489,6 +636,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
       ),
     );
   }
+
 
   Widget _buildOrderItem(OrderItemEntity item) {
     final imageUrl = item.imageUrl;
@@ -534,8 +682,8 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
     );
   }
 
-  Widget _buildPaymentSummary(OrderEntity order) {
-    final subtotal = order.items.fold<int>(0, (sum, item) => sum + ((item.price ?? 0) * item.quantity));
+  Widget _buildPaymentSummary(OrderEntity order, List<OrderItemEntity> mergedItems) {
+    final subtotal = mergedItems.fold<int>(0, (sum, item) => sum + ((item.price ?? 0) * item.quantity));
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -610,13 +758,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
     if (!mounted) return;
     setState(() => _isProcessing = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Order accepted! Move to Preparing when ready."),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    SnackbarUtils.showSuccess(context, "Order accepted! Move to Preparing when ready.");
   }
 
   Future<void> _rejectOrder(OrderEntity order) async {
@@ -642,13 +784,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
       if (!mounted) return;
       setState(() => _isProcessing = false);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Order rejected"),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      SnackbarUtils.showError(context, "Order rejected");
     }
   }
 
@@ -669,11 +805,170 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
     if (!mounted) return;
     setState(() => _isProcessing = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Status updated to $nextStatus"),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
+    SnackbarUtils.showSuccess(context, "Status updated to $nextStatus");
+  }
+
+  /// Whether to show the "Mark as Paid" button
+  bool _shouldShowMarkPaid(OrderEntity order) {
+    if (order.paymentStatus == "Paid") return false;
+    // Show for all Pay on Delivery methods
+    return order.paymentMethod == "Cash on Delivery" ||
+        order.paymentMethod == "eSewa(Pay on Delivery)" ||
+        order.paymentMethod == "Khalti(Pay on Delivery)";
+  }
+
+  /// Mark the order as paid
+  Future<void> _markOrderPaid(OrderEntity order) async {
+    final orderId = order.orderId;
+    if (orderId == null) return;
+
+    setState(() => _isProcessing = true);
+    await ref.read(orderViewModelProvider.notifier).markOrderPaid(orderId);
+    if (!mounted) return;
+    setState(() => _isProcessing = false);
+
+    SnackbarUtils.showSuccess(context, "Payment confirmed!");
+  }
+
+  Widget _buildEtdCard(Map<String, dynamic> etdInfo, String orderStatus) {
+    final distance = etdInfo['distance'];
+    final estimatedMinutes = etdInfo['estimatedMinutes'];
+    final distanceKm = distance is double ? distance.toStringAsFixed(1) : '${distance ?? '--'}';
+    final minutes = estimatedMinutes is int ? estimatedMinutes : '${estimatedMinutes ?? '--'}';
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE1F5FE).withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF0288D1).withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0288D1).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.delivery_dining, color: Color(0xFF0288D1), size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  orderStatus == "Delivered"
+                      ? "Delivered successfully"
+                      : "Rider is on the way",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: Color(0xFF0288D1),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                ClipRect(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      children: [
+                        if (orderStatus == "Out for Delivery") ...[
+                          const Icon(Icons.timer_outlined, size: 13, color: AppColors.textSecondary),
+                          const SizedBox(width: 3),
+                          Text(
+                            "ETA: $minutes mins",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                        ],
+                        const Icon(Icons.map_outlined, size: 13, color: AppColors.textSecondary),
+                        const SizedBox(width: 3),
+                        Text(
+                          "$distanceKm km away",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEtdUnavailable(Map<String, dynamic> etdInfo) {
+    final reason = etdInfo['reason'] as String? ?? 'Location data not available';
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF4E5),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.info_outline, color: Colors.orange, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "ETD Unavailable",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Color(0xFFB8860B),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  reason,
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.4),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEtdLoading() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.inputFill,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: const Row(
+        children: [
+          SizedBox(
+            width: 24, height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+          ),
+          SizedBox(width: 12),
+          Text(
+            "Calculating estimated delivery...",
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          ),
+        ],
       ),
     );
   }
@@ -702,6 +997,23 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
       case "Cancelled": return const Color(0xFFF3E5F5);
       default: return AppColors.inputFill;
     }
+  }
+
+  /// Merge items with the same productId and combine their quantities
+  List<OrderItemEntity> _mergedItems(OrderEntity order) {
+    final map = <String, OrderItemEntity>{};
+    for (final item in order.items) {
+      final key = item.productId;
+      if (map.containsKey(key)) {
+        final existing = map[key]!;
+        map[key] = existing.copyWith(
+          quantity: existing.quantity + item.quantity,
+        );
+      } else {
+        map[key] = item;
+      }
+    }
+    return map.values.toList();
   }
 
   String _formatDate(String dateStr) {

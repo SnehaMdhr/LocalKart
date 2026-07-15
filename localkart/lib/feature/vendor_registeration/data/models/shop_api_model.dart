@@ -9,6 +9,8 @@ class ShopApiModel {
   final List<String> categories;
   final String? imageUrl;
   final String? status;
+  final double? latitude;
+  final double? longitude;
 
   ShopApiModel({
     this.id,
@@ -19,6 +21,8 @@ class ShopApiModel {
     required this.categories,
     this.imageUrl,
     this.status,
+    this.latitude,
+    this.longitude,
   });
 
   // toJson
@@ -32,6 +36,14 @@ class ShopApiModel {
 
     if (imageUrl != null && imageUrl!.trim().isNotEmpty) {
       payload["imageUrl"] = imageUrl;
+    }
+
+    if (latitude != null) {
+      payload["latitude"] = latitude;
+    }
+
+    if (longitude != null) {
+      payload["longitude"] = longitude;
     }
 
     return payload;
@@ -48,6 +60,8 @@ class ShopApiModel {
       categories: (json["categories"] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
       imageUrl: json["imageUrl"] as String?,
       status: json["status"] as String?,
+      latitude: (json["latitude"] as num?)?.toDouble(),
+      longitude: (json["longitude"] as num?)?.toDouble(),
     );
   }
 
@@ -62,6 +76,8 @@ class ShopApiModel {
       categories: categories,
       imageUrl: imageUrl,
       status: status,
+      latitude: latitude,
+      longitude: longitude,
     );
   }
 
@@ -73,6 +89,8 @@ class ShopApiModel {
       description: entity.description,
       categories: entity.categories,
       imageUrl: entity.imageUrl,
+      latitude: entity.latitude,
+      longitude: entity.longitude,
     );
   }
 

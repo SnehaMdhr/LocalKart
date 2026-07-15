@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
+import 'package:localkart/core/utils/snackbar_utils.dart';
 import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/feature/cart/presentation/view_model/cart_view_model.dart';
 import 'package:localkart/feature/order/domain/entities/order_entity.dart';
@@ -56,8 +57,14 @@ class _ReorderDialogState extends ConsumerState<ReorderDialog> {
       );
     }
 
-    // Navigate to checkout screen
     if (!context.mounted) return;
+    SnackbarUtils.showSuccess(
+      context,
+      "${_items.length} item${_items.length != 1 ? 's' : ''} added to cart",
+      duration: const Duration(seconds: 2),
+    );
+
+    // Navigate to checkout screen
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const CheckoutScreen()),

@@ -17,14 +17,23 @@ class OrderRemoteDatasource implements IOrderRemoteDatasource {
   @override
   Future<OrderApiModel?> placeOrder({
     required String deliveryAddress,
+    required double latitude,
+    required double longitude,
     required String paymentMethod,
+    String? customerNote,
   }) async {
     try {
       final response = await _apiClient.post(
         ApiEndpoints.createOrder,
         data: {
-          'deliveryAddress': deliveryAddress,
+          'deliveryAddress': {
+            'fullAddress': deliveryAddress,
+            'latitude': latitude,
+            'longitude': longitude,
+          },
           'paymentMethod': paymentMethod,
+          if (customerNote != null && customerNote.isNotEmpty)
+            'customerNote': customerNote,
         },
       );
 
@@ -81,6 +90,27 @@ class OrderRemoteDatasource implements IOrderRemoteDatasource {
   }
 
   @override
+  Future<List<OrderApiModel>> getPendingOrders() async {
+    try {
+      final response = await _apiClient.get(ApiEndpoints.getPendingOrders);
+
+      final responseData = response.data as Map<String, dynamic>?;
+      if (responseData == null) return [];
+
+      final data = responseData['data'];
+      if (data is List) {
+        return data
+            .map((e) => OrderApiModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+
+      return [];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
   Future<OrderApiModel?> getOrderById(String orderId) async {
     try {
       final path = '${ApiEndpoints.getOrderById}$orderId';
@@ -96,10 +126,19 @@ class OrderRemoteDatasource implements IOrderRemoteDatasource {
   }
 
   @override
-  Future<OrderApiModel?> acceptOrder(String orderId) async {
+  Future<OrderApiModel?> acceptOrder({
+    required String orderId,
+    int? estimatedDeliveryTime,
+  }) async {
     try {
       final path = '${ApiEndpoints.acceptOrder}$orderId/accept';
-      final response = await _apiClient.patch(path);
+      final response = await _apiClient.patch(
+        path,
+        data: {
+          if (estimatedDeliveryTime != null)
+            'estimatedDeliveryTime': estimatedDeliveryTime,
+        },
+      );
 
       final responseData = response.data as Map<String, dynamic>?;
       if (responseData == null) return null;
@@ -143,6 +182,36 @@ class OrderRemoteDatasource implements IOrderRemoteDatasource {
       if (responseData == null) return null;
 
       return OrderApiModel.fromJsonWithData(responseData);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<OrderApiModel?> markOrderPaid(String orderId) async {
+    try {
+      final path = '${ApiEndpoints.markOrderPaid}$orderId/mark-paid';
+      final response = await _apiClient.patch(path);
+
+      final responseData = response.data as Map<String, dynamic>?;
+      if (responseData == null) return null;
+
+      return OrderApiModel.fromJsonWithData(responseData);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getOrderEtd(String orderId) async {
+    try {
+      final path = '${ApiEndpoints.getOrderEtd}$orderId/etd';
+      final response = await _apiClient.get(path);
+
+      final responseData = response.data as Map<String, dynamic>?;
+      if (responseData == null) return null;
+
+      return responseData['data'] as Map<String, dynamic>?;
     } catch (e) {
       rethrow;
     }

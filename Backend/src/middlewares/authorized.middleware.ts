@@ -1,9 +1,9 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 import { IUser } from "../model/user.model";
-import { UserRepository } from "../repositories/user.repository";
 import { HttpError } from "../errors/https-error";
 import { JWT_SECRET } from "../config";
+import { UserRepository } from "../repositories/user.repository";
 
 
 declare global {

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:localkart/app/theme/app_colors.dart';
+import 'package:localkart/feature/notification/presentation/widgets/notification_bell.dart';
 
 class TitleAppBar extends StatelessWidget
     implements PreferredSizeWidget {
+  final bool showNotificationBell;
   final VoidCallback? onNotificationTap;
 
   const TitleAppBar({
     super.key,
+    this.showNotificationBell = true,
     this.onNotificationTap,
   });
 
@@ -37,7 +40,8 @@ class TitleAppBar extends StatelessWidget
           children: [
             TextSpan(
               text: "Local",
-              style: TextStyle(                  color: AppColors.textPrimary,
+              style: TextStyle(
+                color: AppColors.textPrimary,
                 fontSize: 30,
                 fontWeight: FontWeight.bold,
               ),
@@ -54,38 +58,13 @@ class TitleAppBar extends StatelessWidget
         ),
       ),
 
-      /// Notification Icon
+      /// Notification Bell with Badge
       actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                onPressed: onNotificationTap,
-                icon: const Icon(
-                  Icons.notifications_none_rounded,
-                  color: AppColors.textPrimary,
-                  size: 30,
-                ),
-              ),
-
-              /// Red Dot
-              Positioned(
-                top: 14,
-                right: 12,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.error,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
+        if (showNotificationBell)
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: NotificationBell(),
           ),
-        ),
       ],
     );
   }

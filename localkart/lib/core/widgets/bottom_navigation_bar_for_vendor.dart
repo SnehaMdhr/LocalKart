@@ -6,6 +6,7 @@ import 'package:localkart/core/widgets/title_app_bar.dart';
 import 'package:localkart/feature/auth/presentation/pages/vendor_dashboard.dart';
 import 'package:localkart/feature/order/presentation/pages/vendor_order_screen.dart';
 import 'package:localkart/feature/profile/presentation/pages/vendor_profile_screen.dart';
+import 'package:localkart/feature/rating/presentation/pages/vendor_ratings_screen.dart';
 
 class BottomNavigationBarForVendor extends ConsumerStatefulWidget {
   const BottomNavigationBarForVendor({super.key});
@@ -21,6 +22,7 @@ class _BottomNavigationBarForVendorState
 
   final List<Widget> _screens = const [
     VendorDashboard(),
+    VendorRatingsScreen(),
     VendorOrderScreen(),
     VendorProfileScreen(),
   ];
@@ -30,6 +32,11 @@ class _BottomNavigationBarForVendorState
       label: 'Dashboard',
       selectedIcon: Icons.dashboard_rounded,
       unselectedIcon: Icons.dashboard_outlined,
+    ),
+    _NavTab(
+      label: 'Ratings',
+      selectedIcon: Icons.star_rounded,
+      unselectedIcon: Icons.star_outline_rounded,
     ),
     _NavTab(
       label: 'Orders',

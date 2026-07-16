@@ -8,6 +8,8 @@ import 'package:localkart/feature/notification/presentation/view_model/notificat
 import 'package:localkart/feature/order/presentation/pages/order_detail_screen.dart';
 import 'package:localkart/feature/order/presentation/pages/vendor_order_status_screen.dart';
 import 'package:localkart/feature/order/presentation/view_model/order_view_model.dart';
+import 'package:localkart/feature/rating/presentation/view_model/rating_view_model.dart';
+import 'package:localkart/feature/rating/presentation/widgets/rating_dialog.dart';
 
 class NotificationScreen extends ConsumerStatefulWidget {
   const NotificationScreen({super.key});
@@ -19,6 +21,8 @@ class NotificationScreen extends ConsumerStatefulWidget {
 
 class _NotificationScreenState extends ConsumerState<NotificationScreen> {
   final ScrollController _scrollController = ScrollController();
+  // Track which order IDs have been rated locally
+  final Set<String> _ratedOrderIds = {};
 
   @override
   void initState() {
@@ -276,9 +280,11 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                     .deleteNotification(notification.notificationId!);
               }
             },
+            isRated: notification.orderId != null && _ratedOrderIds.contains(notification.orderId),
             onTrackOrder: () => _navigateToOrderDetail(notification, userRole),
             onRateOrder: () => _showRatingDialog(notification),
             onViewOrder: () => _navigateToOrderDetail(notification, userRole),
+            onViewRating: () => _showRatingDialog(notification),
           );
         },
       ),
@@ -327,144 +333,41 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  //  Rating dialog for delivered orders
+  //  Show the rating dialog (bottom sheet) for delivered orders
   // ═══════════════════════════════════════════════════════════════════════════
 
-  void _showRatingDialog(NotificationEntity notification) {
-    int selectedRating = 0;
+  Future<void> _showRatingDialog(NotificationEntity notification) async {
+    final orderId = notification.orderId;
+    if (orderId == null || orderId.isEmpty) return;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setDialogState) => Container(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Drag handle
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 20),
+    // Fetch the full order by ID
+    await ref.read(orderViewModelProvider.notifier).getOrderById(orderId);
 
-              // Icon
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.star_rounded,
-                  size: 36,
-                  color: AppColors.success,
-                ),
-              ),
-              const SizedBox(height: 16),
+    if (!mounted) return;
 
-              const Text(
-                'Rate your experience',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'How was your delivery from\n${notification.message.contains('delivered') ? 'this order' : notification.title}?',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 20),
+    final currentOrder = ref.read(orderViewModelProvider).currentOrder;
+    if (currentOrder == null) return;
 
-              // Star rating
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  final starNumber = index + 1;
-                  return GestureDetector(
-                    onTap: () => setDialogState(() => selectedRating = starNumber),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: AnimatedScale(
-                        scale: starNumber <= selectedRating ? 1.2 : 1.0,
-                        duration: const Duration(milliseconds: 200),
-                        child: Icon(
-                          starNumber <= selectedRating
-                              ? Icons.star_rounded
-                              : Icons.star_outline_rounded,
-                          size: 44,
-                          color: starNumber <= selectedRating
-                              ? AppColors.warning
-                              : AppColors.grey,
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ),
+    // Check if already rated
+    await ref.read(ratingViewModelProvider.notifier).getOrderRating(orderId);
+    if (!mounted) return;
 
-              const SizedBox(height: 24),
+    final ratingState = ref.read(ratingViewModelProvider);
+    final existingRating = ratingState.currentRating;
 
-              // Submit button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: selectedRating > 0
-                      ? () {
-                          Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Thanks for your $selectedRating-star rating!',
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          );
-                        }
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: AppColors.divider,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: const Text(
-                    'Submit Rating',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    // Show the modern bottom sheet dialog
+    final result = await showRatingDialog(
+      context,
+      order: currentOrder,
+      existingRating: existingRating,
     );
+
+    // If rating was submitted/updated, mark this order as rated
+    if (result == true && mounted) {
+      setState(() {
+        _ratedOrderIds.add(orderId);
+      });
+    }
   }
 }
 
@@ -477,18 +380,22 @@ class _NotificationCard extends StatelessWidget {
   final String userRole;
   final VoidCallback onTap;
   final VoidCallback onDismiss;
+  final bool isRated;
   final VoidCallback? onTrackOrder;
   final VoidCallback? onRateOrder;
   final VoidCallback? onViewOrder;
+  final VoidCallback? onViewRating;
 
   const _NotificationCard({
     required this.notification,
     required this.userRole,
     required this.onTap,
     required this.onDismiss,
+    this.isRated = false,
     this.onTrackOrder,
     this.onRateOrder,
     this.onViewOrder,
+    this.onViewRating,
   });
 
   @override
@@ -647,12 +554,20 @@ class _NotificationCard extends StatelessWidget {
                   userRole == 'Customer' &&
                   onRateOrder != null)
                 _buildActionButtonRow([
-                  _ActionButton(
-                    label: 'Rate Experience',
-                    icon: Icons.star_rounded,
-                    color: AppColors.warning,
-                    onTap: onRateOrder!,
-                  ),
+                  if (isRated && onViewRating != null)
+                    _ActionButton(
+                      label: 'View Rating',
+                      icon: Icons.star_rounded,
+                      color: AppColors.success,
+                      onTap: onViewRating!,
+                    )
+                  else if (!isRated)
+                    _ActionButton(
+                      label: 'Rate Experience',
+                      icon: Icons.star_rounded,
+                      color: AppColors.warning,
+                      onTap: onRateOrder!,
+                    )
                 ])
               else if (isVendorNewOrder && onViewOrder != null)
                 _buildActionButtonRow([

@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 
 class ApiEndpoints {
   ApiEndpoints._();
-  static const bool isPhysicalDevice = true;
+  static const bool isPhysicalDevice = false;
   static const String compIpAddress = "10.193.90.231";
   static String get baseUrl {
     if (isPhysicalDevice) {
@@ -90,4 +90,27 @@ class ApiEndpoints {
   static const String deleteOrder = "/order/";
   static const String markOrderPaid = "/order/";
   static const String getOrderEtd = "/order/";
+
+  //=============== Notification Endpoints ============
+  static const String getNotifications = "/notification";
+  static const String getUnreadCount = "/notification/unread-count";
+  static const String markAllNotificationsRead = "/notification/read-all";
+  static String markNotificationRead(String id) => "/notification/$id/read";
+  static String deleteNotification(String id) => "/notification/$id";
+
+  //=============== Socket.IO ============
+  static String get socketUrl {
+    if (isPhysicalDevice) {
+      return "http://$compIpAddress:3000";
+    }
+    if (kIsWeb) {
+      return "http://localhost:3000";
+    } else if (Platform.isAndroid) {
+      return "http://10.0.2.2:3000";
+    } else if (Platform.isIOS) {
+      return "http://localhost:3000";
+    } else {
+      return "http://localhost:3000";
+    }
+  }
 }

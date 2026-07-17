@@ -109,16 +109,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       SnackbarUtils.showError(context, "Product ID is not available");
       return;
     }
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.background,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => _CollectionPickerSheet(productId: productId),
-    );
+    _CollectionPickerDialog.show(context, productId);
   }
 
   @override
@@ -175,8 +166,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)],
+            color: AppColors.white,
+            boxShadow: [BoxShadow(color: AppColors.black.withOpacity(0.12), blurRadius: 8)],
           ),
           child: isInCart
               ? _buildRemoveFromCartBar(cartQuantity)
@@ -219,7 +210,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
                             Text(
                               widget.product.unit,
-                              style: TextStyle(color: Colors.grey.shade700),
+                              style: TextStyle(color: AppColors.textSecondary),
                             ),
                           ],
                         ),
@@ -332,7 +323,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         Container(
           height: 48,
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
+            color: AppColors.inputFill,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -372,14 +363,14 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       width: 24,
                       height: 24,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: AppColors.white,
                         strokeWidth: 2,
                       ),
                     )
                   : const Text(
                       "Add to Cart",
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -427,7 +418,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         Container(
           height: 48,
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
+            color: AppColors.inputFill,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -461,7 +452,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               onPressed: _isRemovingFromCart ? null : _removeFromCart,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.error,
-                foregroundColor: Colors.white,
+                foregroundColor: AppColors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -472,13 +463,13 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: AppColors.white,
                       ),
                     )
                   : const Text(
                       "Remove",
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -558,19 +549,26 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 }
 
-/// Bottom sheet that shows all user collections and lets them pick one.
-class _CollectionPickerSheet extends ConsumerStatefulWidget {
+/// Dialog that shows all user collections and lets them pick one.
+class _CollectionPickerDialog extends ConsumerStatefulWidget {
   final String productId;
 
-  const _CollectionPickerSheet({required this.productId});
+  const _CollectionPickerDialog({required this.productId});
+
+  static Future<void> show(BuildContext context, String productId) {
+    return showDialog(
+      context: context,
+      builder: (_) => _CollectionPickerDialog(productId: productId),
+    );
+  }
 
   @override
-  ConsumerState<_CollectionPickerSheet> createState() =>
-      _CollectionPickerSheetState();
+  ConsumerState<_CollectionPickerDialog> createState() =>
+      _CollectionPickerDialogState();
 }
 
-class _CollectionPickerSheetState
-    extends ConsumerState<_CollectionPickerSheet> {
+class _CollectionPickerDialogState
+    extends ConsumerState<_CollectionPickerDialog> {
   /// Track which collections are currently being added to.
   final Set<String> _addingCollectionIds = {};
 
@@ -578,64 +576,99 @@ class _CollectionPickerSheetState
   Widget build(BuildContext context) {
     final state = ref.watch(collectionViewModelProvider);
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.55,
-      minChildSize: 0.3,
-      maxChildSize: 0.85,
-      expand: false,
-      builder: (context, scrollController) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              /// Handle
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.grey,
-                    borderRadius: BorderRadius.circular(2),
+    return Dialog(
+      backgroundColor: AppColors.card,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.55,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 8, 0),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryExtraLight,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.bookmark_add_rounded,
+                      color: AppColors.primary,
+                      size: 22,
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Save to Collection",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          "Choose a collection or create new",
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                    splashRadius: 20,
+                    tooltip: "Close",
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
+            ),
 
-              /// Title
-              const Text(
-                "Save to Collection",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+            const SizedBox(height: 8),
+
+            /// Divider
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Divider(color: AppColors.divider, height: 1),
+            ),
+
+            const SizedBox(height: 12),
+
+            /// Create new collection button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _buildCreateNewTile(context, ref),
+            ),
+
+            const SizedBox(height: 12),
+
+            /// Collections list (wraps to content height, safe with many items)
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                child: _buildCollectionsList(context, ref, state),
               ),
-              const SizedBox(height: 4),
-              const Text(
-                "Choose a collection or create a new one",
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-              ),
-              const SizedBox(height: 16),
-
-              /// Create new collection button
-              _buildCreateNewTile(context, ref),
-
-              const SizedBox(height: 12),
-
-              /// Collections list
-              Expanded(
-                child: _buildCollectionsList(
-                  context,
-                  ref,
-                  state,
-                  scrollController,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -683,7 +716,6 @@ class _CollectionPickerSheetState
     BuildContext context,
     WidgetRef ref,
     CollectionState state,
-    ScrollController scrollController,
   ) {
     if (state.status == CollectionStatus.loading) {
       return const Center(
@@ -713,7 +745,7 @@ class _CollectionPickerSheetState
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
               ),
-              child: const Text("Retry", style: TextStyle(color: Colors.white)),
+              child: const Text("Retry", style: TextStyle(color: AppColors.white)),
             ),
           ],
         ),
@@ -750,7 +782,8 @@ class _CollectionPickerSheetState
     final collections = state.collections;
 
     return ListView.separated(
-      controller: scrollController,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: collections.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, index) {

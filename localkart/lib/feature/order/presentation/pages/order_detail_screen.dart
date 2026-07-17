@@ -74,7 +74,15 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           const SizedBox(height: 12),
           ...mergedItems.map((item) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: _buildOrderItem(item),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.card,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.divider),
+              ),
+              padding: const EdgeInsets.all(14),
+              child: _buildOrderItem(item),
+            ),
           )),
           const SizedBox(height: 24),
           _sectionHeader("Payment Summary"),
@@ -89,10 +97,6 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
             const SizedBox(height: 24),
           ],
 
-          _sectionHeader("Delivery Address"),
-          const SizedBox(height: 12),
-          _buildAddressCard(widget.order),
-          const SizedBox(height: 30),
           Center(
             child: Text(
               "Order ID: ${widget.order.orderId ?? 'N/A'}",
@@ -199,19 +203,19 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFE1F5FE).withValues(alpha: 0.5),
+        color: AppColors.deliveryInfoBg.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF0288D1).withValues(alpha: 0.2)),
+        border: Border.all(color: AppColors.deliveryInfo.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFF0288D1).withValues(alpha: 0.1),
+              color: AppColors.deliveryInfo.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.delivery_dining, color: Color(0xFF0288D1), size: 28),
+            child: const Icon(Icons.delivery_dining, color: AppColors.deliveryInfo, size: 28),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -225,7 +229,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: Color(0xFF0288D1),
+                    color: AppColors.deliveryInfo,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -276,14 +280,14 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF4E5),
+        color: AppColors.warningLight,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline, color: Colors.orange, size: 22),
+          const Icon(Icons.info_outline, color: AppColors.warning, size: 22),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -294,7 +298,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: Color(0xFFB8860B),
+                    color: AppColors.preparing,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -353,7 +357,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Order #${_shortId(order.orderId ?? '')}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary)),
+                Text("Order #${_shortId(order.orderId ?? '')} Payment Status", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary)),
                 const SizedBox(height: 4),
                 Text(_formatDate(order.createdAt ?? ''), style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
               ],
@@ -383,6 +387,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
+          
           child: SizedBox(
             width: 72, height: 72,
             child: fullUrl != null
@@ -522,43 +527,6 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     );
   }
 
-  Widget _buildAddressCard(OrderEntity order) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.divider)),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: AppColors.primaryExtraLight, borderRadius: BorderRadius.circular(12)),
-            child: const Icon(Icons.location_on_outlined, color: AppColors.primary, size: 22),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  order.deliveryAddress.isNotEmpty ? order.deliveryAddress : "No address provided",
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, height: 1.5),
-                ),
-                if (order.latitude != null && order.longitude != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      "${order.latitude!.toStringAsFixed(6)}, ${order.longitude!.toStringAsFixed(6)}",
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _sectionHeader(String title) {
     return Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: AppColors.textPrimary));
   }
@@ -577,12 +545,12 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     Color bgColor, textColor;
     switch (status) {
       case "Pending": bgColor = AppColors.warning.withValues(alpha: 0.15); textColor = AppColors.warning; break;
-      case "Accepted": bgColor = const Color(0xFFE3F5E8); textColor = AppColors.primary; break;
-      case "Rejected": bgColor = const Color(0xFFFFEEEE); textColor = AppColors.error; break;
-      case "Preparing": bgColor = const Color(0xFFFFF4D6); textColor = Color(0xFFB8860B); break;
-      case "Out for Delivery": bgColor = const Color(0xFFE1F5FE); textColor = Color(0xFF0288D1); break;
+      case "Accepted": bgColor = AppColors.categoryVegetable; textColor = AppColors.primary; break;
+      case "Rejected": bgColor = AppColors.logoutBackground; textColor = AppColors.error; break;
+      case "Preparing": bgColor = AppColors.categoryDairy; textColor = AppColors.preparing; break;
+      case "Out for Delivery": bgColor = AppColors.deliveryInfoBg; textColor = AppColors.deliveryInfo; break;
       case "Delivered": bgColor = AppColors.success.withValues(alpha: 0.15); textColor = AppColors.success; break;
-      case "Cancelled": bgColor = const Color(0xFFF3E5F5); textColor = AppColors.textSecondary; break;
+      case "Cancelled": bgColor = AppColors.categoryPersonal; textColor = AppColors.textSecondary; break;
       default: bgColor = AppColors.inputFill; textColor = AppColors.textSecondary;
     }
     return Container(
@@ -597,8 +565,8 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
       case "Pending": return AppColors.warning;
       case "Accepted": return AppColors.primary;
       case "Rejected": return AppColors.error;
-      case "Preparing": return const Color(0xFFB8860B);
-      case "Out for Delivery": return const Color(0xFF0288D1);
+      case "Preparing": return AppColors.preparing;
+      case "Out for Delivery": return AppColors.deliveryInfo;
       case "Delivered": return AppColors.success;
       case "Cancelled": return AppColors.textSecondary;
       default: return AppColors.textSecondary;

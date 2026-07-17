@@ -157,7 +157,7 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
                 ),
                 child: const Text(
                   "Retry",
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.white),
                 ),
               ),
             ],
@@ -204,7 +204,7 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
                 ),
                 child: const Text(
                   "Start Shopping",
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.white),
                 ),
               ),
             ],
@@ -221,94 +221,119 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
             children: [
               ...items.map(
                 (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 18),
+                  padding: const EdgeInsets.only(bottom: 10),
                   child: _buildCartItem(item),
                 ),
               ),
-              const SizedBox(height: 8),
-              // const Text(
-              //   "Have a coupon?",
-              //   style: TextStyle(
-              //     fontWeight: FontWeight.w600,
-              //     color: AppColors.textPrimary,
-              //   ),
-              // ),
-              // const SizedBox(height: 12),
-              // Row(
-              //   children: [
-              //     Expanded(
-              //       child: TextField(
-              //         decoration: InputDecoration(
-              //           hintText: "Enter code",
-              //           filled: true,
-              //           fillColor: AppColors.white,
-              //           contentPadding:
-              //               const EdgeInsets.symmetric(horizontal: 16),
-              //           enabledBorder: OutlineInputBorder(
-              //             borderRadius: BorderRadius.circular(30),
-              //             borderSide:
-              //                 const BorderSide(color: AppColors.border),
-              //           ),
-              //           focusedBorder: OutlineInputBorder(
-              //             borderRadius: BorderRadius.circular(30),
-              //             borderSide:
-              //                 const BorderSide(color: AppColors.primary),
-              //           ),
-              //         ),
-              //       ),
-              //     ),
-              //     const SizedBox(width: 10),
-              //     SizedBox(
-              //       width: 96,
-              //       height: 56,
-              //       child: ElevatedButton(
-              //         onPressed: () {},
-              //         style: ElevatedButton.styleFrom(
-              //           backgroundColor: Colors.grey.shade600,
-              //           minimumSize: const Size(96, 56),
-              //           shape: RoundedRectangleBorder(
-              //             borderRadius: BorderRadius.circular(30),
-              //           ),
-              //         ),
-              //         child: const Text("Apply"),
-              //       ),
-              //     ),
-              //   ],
-              // ),
-              const SizedBox(height: 25),
-              const Divider(),
-              const SizedBox(height: 15),
-              _summaryRow("Subtotal", "Rs.$subtotal"),
-              const SizedBox(height: 10),
-              _summaryRow(
-                "Delivery Fee",
-                "FREE",
-                valueColor: AppColors.primary,
-              ),
-              const Divider(height: 35),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    "Total Amount",
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    "Rs.$subtotal",
-                    style: const TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Have a coupon?",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: "Enter code",
+                              filled: true,
+                              fillColor: AppColors.white,
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                borderSide:
+                                    const BorderSide(color: AppColors.border),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                borderSide:
+                                    const BorderSide(color: AppColors.primary),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        SizedBox(
+                          width: 96,
+                          height: 45,
+                          child: ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey.shade600,
+                              minimumSize: const Size(96, 45),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
+                            child: const Text("Apply"),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    _summaryRow("Subtotal", "Rs.$subtotal"),
+                    const SizedBox(height: 10),
+                    _summaryRow(
+                      "Delivery Fee",
+                      "FREE",
+                      valueColor: AppColors.primary,
+                    ),
+                    const Divider(height: 25),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Total Amount",
+                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          "Rs.$subtotal",
+                          style: const TextStyle(
+                            fontSize: 34,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 25),
             ],
           ),
         ),
-        Padding(
+        Container(
+          width: double.infinity,
           padding: const EdgeInsets.all(18),
+          decoration: const BoxDecoration(
+          ),
           child: SizedBox(
             width: double.infinity,
             height: 58,
@@ -338,135 +363,176 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
               : '${ApiEndpoints.mediaServerUrl}${imageUrl.startsWith('/') ? '' : '/'}$imageUrl')
         : null;
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: SizedBox(
-            width: 82,
-            height: 82,
-            child: fullUrl != null
-                ? Image.network(
-                    fullUrl,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, progress) {
-                      if (progress == null) return child;
-                      return Container(
-                        color: AppColors.inputFill,
-                        child: const Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.primary,
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: SizedBox(
+              width: 82,
+              height: 82,
+              child: fullUrl != null
+                  ? Image.network(
+                      fullUrl,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, progress) {
+                        if (progress == null) return child;
+                        return Container(
+                          color: AppColors.inputFill,
+                          child: const Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.primary,
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: AppColors.inputFill,
-                        child: const Icon(
-                          Icons.image_outlined,
-                          size: 36,
-                          color: AppColors.grey,
-                        ),
-                      );
-                    },
-                  )
-                : Container(
-                    color: AppColors.inputFill,
-                    child: const Icon(
-                      Icons.image_outlined,
-                      size: 36,
-                      color: AppColors.grey,
-                    ),
-                  ),
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      item.productName ?? "Product",
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () async {
-                      await ref
-                          .read(cartViewModelProvider.notifier)
-                          .removeFromCart(item.productId);
-                      if (mounted) {
-                        SnackbarUtils.showError(
-                          context,
-                          "${item.productName} removed from cart",
-                          duration: const Duration(seconds: 2),
                         );
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(20),
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(
-                        Icons.delete_outline,
-                        size: 20,
-                        color: AppColors.error,
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: AppColors.inputFill,
+                          child: const Icon(
+                            Icons.image_outlined,
+                            size: 36,
+                            color: AppColors.grey,
+                          ),
+                        );
+                      },
+                    )
+                  : Container(
+                      color: AppColors.inputFill,
+                      child: const Icon(
+                        Icons.image_outlined,
+                        size: 36,
+                        color: AppColors.grey,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Text(
-                    "Rs. ${item.price ?? 0}",
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 22,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.productName ?? "Product",
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryExtraLight,
-                      borderRadius: BorderRadius.circular(30),
+                    InkWell(
+                      onTap: () async {
+                        await ref
+                            .read(cartViewModelProvider.notifier)
+                            .removeFromCart(item.productId);
+                        if (mounted) {
+                          SnackbarUtils.showError(
+                            context,
+                            "${item.productName} removed from cart",
+                            duration: const Duration(seconds: 2),
+                          );
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(20),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.delete_outline,
+                          size: 20,
+                          color: AppColors.error,
+                        ),
+                      ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          onPressed: () async {
-                            if (item.quantity <= 1) {
-                              await ref
-                                  .read(cartViewModelProvider.notifier)
-                                  .removeFromCart(item.productId);
-                              if (mounted) {
-                                SnackbarUtils.showError(
-                                  context,
-                                  "${item.productName} removed from cart",
-                                  duration: const Duration(seconds: 2),
-                                );
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text(
+                      "Rs. ${item.price ?? 0}",
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 22,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryExtraLight,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            onPressed: () async {
+                              if (item.quantity <= 1) {
+                                await ref
+                                    .read(cartViewModelProvider.notifier)
+                                    .removeFromCart(item.productId);
+                                if (mounted) {
+                                  SnackbarUtils.showError(
+                                    context,
+                                    "${item.productName} removed from cart",
+                                    duration: const Duration(seconds: 2),
+                                  );
+                                }
+                              } else {
+                                await ref
+                                    .read(cartViewModelProvider.notifier)
+                                    .updateQuantity(
+                                      item.productId,
+                                      item.quantity - 1,
+                                    );
+                                if (mounted) {
+                                  SnackbarUtils.showInfo(
+                                    context,
+                                    "Quantity updated",
+                                    duration: const Duration(seconds: 1),
+                                  );
+                                }
                               }
-                            } else {
+                            },
+                            icon: const Icon(
+                              Icons.remove,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 36,
+                              minHeight: 36,
+                            ),
+                            padding: EdgeInsets.zero,
+                          ),
+                          Text(
+                            "${item.quantity}",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () async {
                               await ref
                                   .read(cartViewModelProvider.notifier)
                                   .updateQuantity(
                                     item.productId,
-                                    item.quantity - 1,
+                                    item.quantity + 1,
                                   );
                               if (mounted) {
                                 SnackbarUtils.showInfo(
@@ -475,66 +541,32 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
                                   duration: const Duration(seconds: 1),
                                 );
                               }
-                            }
-                          },
-                          icon: const Icon(
-                            Icons.remove,
-                            color: AppColors.primary,
-                            size: 20,
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
-                          ),
-                          padding: EdgeInsets.zero,
-                        ),
-                        Text(
-                          "${item.quantity}",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () async {
-                            await ref
-                                .read(cartViewModelProvider.notifier)
-                                .updateQuantity(
-                                  item.productId,
-                                  item.quantity + 1,
-                                );
-                            if (mounted) {
-                              SnackbarUtils.showInfo(
-                                context,
-                                "Quantity updated",
-                                duration: const Duration(seconds: 1),
-                              );
-                            }
-                          },
-                          icon: const CircleAvatar(
-                            radius: 13,
-                            backgroundColor: AppColors.primary,
-                            child: Icon(
-                              Icons.add,
-                              color: Colors.white,
-                              size: 16,
+                            },
+                            icon: const CircleAvatar(
+                              radius: 13,
+                              backgroundColor: AppColors.primary,
+                              child: Icon(
+                                Icons.add,
+                                color: Colors.white,
+                                size: 16,
+                              ),
                             ),
+                            constraints: const BoxConstraints(
+                              minWidth: 36,
+                              minHeight: 36,
+                            ),
+                            padding: EdgeInsets.zero,
                           ),
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
-                          ),
-                          padding: EdgeInsets.zero,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

@@ -310,7 +310,7 @@ class _EditShopScreenState extends ConsumerState<EditShopScreen> {
                     borderRadius: BorderRadius.circular(28),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
+                        color: AppColors.black.withValues(alpha: 0.08),
                         blurRadius: 18,
                         offset: const Offset(0, 8),
                       ),
@@ -364,11 +364,11 @@ class _EditShopScreenState extends ConsumerState<EditShopScreen> {
                               children: allCategories.map((category) {
                                 final isSelected = selectedCategories.contains(category);
                                 return FilterChip(
-                                  label: Text(category, style: TextStyle(color: isSelected ? Colors.white : AppColors.textPrimary, fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal, fontSize: 13)),
+                                  label: Text(category, style: TextStyle(color: isSelected ? AppColors.white : AppColors.textPrimary, fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal, fontSize: 13)),
                                   selected: isSelected,
                                   onSelected: (selected) { setState(() { if (selected) selectedCategories.add(category); else selectedCategories.remove(category); }); },
                                   selectedColor: AppColors.primary,
-                                  checkmarkColor: Colors.white,
+                                  checkmarkColor: AppColors.white,
                                   backgroundColor: Colors.transparent,
                                   side: BorderSide(color: isSelected ? AppColors.primary : AppColors.textSecondary.withValues(alpha: 0.3)),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -470,14 +470,14 @@ class _EditShopScreenState extends ConsumerState<EditShopScreen> {
                                 ],
                               ),
                               if (_isLoadingLocation || _isReversingGeocoding)
-                                Container(color: Colors.black26, child: const Center(child: CircularProgressIndicator(color: AppColors.white)))
+                                Container(color: AppColors.black.withOpacity(0.26), child: const Center(child: CircularProgressIndicator(color: AppColors.white)))
                               else
                                 IgnorePointer(
                                   child: Center(
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Container(width: 12, height: 4, decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(2))),
+                                        Container(width: 12, height: 4, decoration: BoxDecoration(color: AppColors.black.withOpacity(0.26), borderRadius: BorderRadius.circular(2))),
                                         const SizedBox(height: 2),
                                         const Icon(Icons.location_on, size: 40, color: AppColors.primary),
                                       ],

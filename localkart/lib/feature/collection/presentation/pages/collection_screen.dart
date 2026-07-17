@@ -186,7 +186,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          "Saved Items",
+          "Saved Bundles",
           style: TextStyle(
             color: AppColors.primary,
             fontWeight: FontWeight.bold,
@@ -197,7 +197,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
       floatingActionButton: FloatingActionButton(
         onPressed: _showCreateCollectionDialog,
         backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.add, color: AppColors.white),
       ),
     );
   }
@@ -241,7 +241,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
                 label: const Text("Retry"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -299,7 +299,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
               label: const Text("Create Collection"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: AppColors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -332,7 +332,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
               child: Row(
                 children: [
                   Text(
-                    "My Collections",
+                    "Saved Bundles",
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -415,7 +415,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
           border: Border.all(color: AppColors.divider),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: AppColors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -528,7 +528,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
           Row(
             children: [
               Expanded(child: _networkImage(imageUrls[0]!)),
-              const VerticalDivider(width: 2, thickness: 2, color: Colors.white),
+              const VerticalDivider(width: 2, thickness: 2, color: AppColors.white),
               Expanded(child: _networkImage(imageUrls[1]!)),
             ],
           ),
@@ -546,12 +546,12 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
               child: Row(
                 children: [
                   Expanded(child: _networkImage(imageUrls[0]!)),
-                  const VerticalDivider(width: 2, thickness: 2, color: Colors.white),
+                  const VerticalDivider(width: 2, thickness: 2, color: AppColors.white),
                   Expanded(child: _networkImage(imageUrls[1]!)),
                 ],
               ),
             ),
-            const Divider(height: 2, thickness: 2, color: Colors.white),
+            const Divider(height: 2, thickness: 2, color: AppColors.white),
             Expanded(child: _networkImage(imageUrls[2]!)),
           ],
         ),
@@ -571,7 +571,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
+              color: AppColors.black.withValues(alpha: 0.15),
               blurRadius: 4,
             ),
           ],
@@ -579,7 +579,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
         child: Text(
           "+$remaining",
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.white,
             fontSize: 10,
             fontWeight: FontWeight.bold,
           ),

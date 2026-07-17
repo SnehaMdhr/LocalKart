@@ -56,12 +56,12 @@ class _ProfileScreenState extends ConsumerState<VendorProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     "Are you sure you want to logout?",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 18,
-                      color: Colors.black54,
+                      color: AppColors.black.withOpacity(0.54),
                     ),
                   ),
                   const SizedBox(height: 35),
@@ -154,7 +154,7 @@ class _ProfileScreenState extends ConsumerState<VendorProfileScreen> {
                                         ? loadingProgress.cumulativeBytesLoaded /
                                             loadingProgress.expectedTotalBytes!
                                         : null,
-                                    color: Colors.white,
+                                    color: AppColors.white,
                                     strokeWidth: 2,
                                   ),
                                 ),
@@ -171,7 +171,7 @@ class _ProfileScreenState extends ConsumerState<VendorProfileScreen> {
                                     style: const TextStyle(
                                       fontSize: 32,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                     ),
                                   ),
                                 ),
@@ -190,7 +190,7 @@ class _ProfileScreenState extends ConsumerState<VendorProfileScreen> {
                           style: const TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: AppColors.white,
                           ),
                         ),
                       ),
@@ -244,58 +244,7 @@ class _ProfileScreenState extends ConsumerState<VendorProfileScreen> {
                 );
               },
             ),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.card,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor:
-                        AppColors.primary.withOpacity(0.08),
-                    child: const Icon(
-                      Icons.dark_mode_outlined,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Dark Mode",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          "Switch to a darker theme",
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Switch(
-                    value: false,
-                    onChanged: (value) {},
-                    activeColor: AppColors.primary,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 25),
+           const SizedBox(height: 25),
             Align(
               alignment: Alignment.centerLeft,
               child: Text(

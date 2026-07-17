@@ -23,13 +23,13 @@ class TitleAppBar extends StatelessWidget
       centerTitle: true,
 
       /// Left Logo
-      leadingWidth: 80,
+      leadingWidth: 72,
       leading: Padding(
-        padding: const EdgeInsets.only(left: 12),
+        padding: const EdgeInsets.only(left: 10),
         child: Center(
           child: Image.asset(
             "assets/images/logo1.png",
-            height: 45,
+            height: 30,
           ),
         ),
       ),
@@ -42,15 +42,15 @@ class TitleAppBar extends StatelessWidget
               text: "Local",
               style: TextStyle(
                 color: AppColors.textPrimary,
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-              ),
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
             ),
-            TextSpan(
-              text: "Kart",
-              style: TextStyle(
-                color: AppColors.primary,
-                fontSize: 30,
+          ),
+          TextSpan(
+            text: "Kart",
+            style: TextStyle(
+              color: AppColors.primary,
+              fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -62,7 +62,7 @@ class TitleAppBar extends StatelessWidget
       actions: [
         if (showNotificationBell)
           Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: 4),
             child: NotificationBell(),
           ),
       ],
@@ -70,5 +70,5 @@ class TitleAppBar extends StatelessWidget
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(70);
+  Size get preferredSize => const Size.fromHeight(56);
 }

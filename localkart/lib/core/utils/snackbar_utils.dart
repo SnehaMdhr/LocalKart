@@ -40,7 +40,7 @@ class SnackbarUtils {
     _showSnackBar(
       context,
       message,
-      backgroundColor: Colors.blue,
+      backgroundColor: AppColors.primary,
       icon: Icons.info_outline_rounded,
       duration: duration,
     );

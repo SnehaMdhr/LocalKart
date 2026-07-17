@@ -22,8 +22,8 @@ class _BottomNavigationBarForVendorState
 
   final List<Widget> _screens = const [
     VendorDashboard(),
-    VendorRatingsScreen(),
     VendorOrderScreen(),
+    VendorRatingsScreen(),
     VendorProfileScreen(),
   ];
 
@@ -33,15 +33,16 @@ class _BottomNavigationBarForVendorState
       selectedIcon: Icons.dashboard_rounded,
       unselectedIcon: Icons.dashboard_outlined,
     ),
-    _NavTab(
-      label: 'Ratings',
-      selectedIcon: Icons.star_rounded,
-      unselectedIcon: Icons.star_outline_rounded,
-    ),
+    
     _NavTab(
       label: 'Orders',
       selectedIcon: Icons.receipt_long_rounded,
       unselectedIcon: Icons.receipt_long_outlined,
+    ),
+    _NavTab(
+      label: 'Ratings',
+      selectedIcon: Icons.star_rounded,
+      unselectedIcon: Icons.star_outline_rounded,
     ),
     _NavTab(
       label: 'Profile',

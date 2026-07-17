@@ -3,13 +3,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/widgets/title_app_bar.dart';
-import 'package:localkart/feature/auth/presentation/pages/discover_screen.dart';
+import 'package:localkart/feature/product/presentation/pages/discover_screen.dart';
 import 'package:localkart/feature/cart/presentation/pages/cart_screen.dart';
 import 'package:localkart/feature/product/presentation/pages/home_screen.dart';
 import 'package:localkart/feature/profile/presentation/pages/profile_screen.dart';
 
 class BottomNavigationBarForCustomer extends ConsumerStatefulWidget {
-  const BottomNavigationBarForCustomer({super.key});
+  final int initialTabIndex;
+
+  const BottomNavigationBarForCustomer({
+    super.key,
+    this.initialTabIndex = 0,
+  });
 
   @override
   ConsumerState<BottomNavigationBarForCustomer> createState() =>
@@ -19,7 +24,13 @@ class BottomNavigationBarForCustomer extends ConsumerStatefulWidget {
 class _BottomNavigationBarForCustomerState
     extends ConsumerState<BottomNavigationBarForCustomer>
     with SingleTickerProviderStateMixin {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialTabIndex;
+  }
 
   final List<Widget> _screens = const [
     HomeScreen(),
@@ -90,7 +101,6 @@ class _BottomNavigationBarForCustomerState
       child: Scaffold(
         appBar: TitleAppBar(
           onNotificationTap: () {
-            // TODO: Navigate to Notification Screen
           },
         ),
         body: IndexedStack(

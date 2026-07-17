@@ -53,7 +53,7 @@ class _NotificationBellState extends ConsumerState<NotificationBell> {
               decoration: BoxDecoration(
                 color: AppColors.error,
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1.5),
+                border: Border.all(color: AppColors.white, width: 1.5),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.error.withValues(alpha: 0.4),
@@ -69,7 +69,7 @@ class _NotificationBellState extends ConsumerState<NotificationBell> {
               child: Text(
                 state.unreadCount > 99 ? '99+' : state.unreadCount.toString(),
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppColors.white,
                   fontSize: 9,
                   fontWeight: FontWeight.bold,
                 ),

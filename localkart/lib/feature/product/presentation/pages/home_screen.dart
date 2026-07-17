@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/services/storage/user_session_service.dart';
-import 'package:localkart/feature/auth/presentation/pages/discover_screen.dart';
+import 'package:localkart/core/widgets/bottom_navigation_bar_for_customer.dart';
 import 'package:localkart/feature/order/domain/entities/order_entity.dart';
 import 'package:localkart/feature/order/presentation/pages/order_detail_screen.dart';
 import 'package:localkart/feature/order/presentation/view_model/order_view_model.dart';
@@ -161,9 +161,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.push(
+                  Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(builder: (_) => const DiscoverScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const BottomNavigationBarForCustomer(
+                        initialTabIndex: 1,
+                      ),
+                    ),
+                    (route) => false,
                   );
                 },
                 child: const Text(
@@ -223,16 +228,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         statusTextColor = AppColors.warning;
         break;
       case "Accepted":
-        statusBgColor = const Color(0xFFE3F5E8);
+        statusBgColor = AppColors.categoryVegetable;
         statusTextColor = AppColors.primary;
         break;
       case "Preparing":
-        statusBgColor = const Color(0xFFFFF4D6);
-        statusTextColor = Color(0xFFB8860B);
+        statusBgColor = AppColors.categoryDairy;
+        statusTextColor = AppColors.preparing;
         break;
       case "Out for Delivery":
-        statusBgColor = const Color(0xFFE1F5FE);
-        statusTextColor = Color(0xFF0288D1);
+        statusBgColor = AppColors.deliveryInfoBg;
+        statusTextColor = AppColors.deliveryInfo;
         break;
       default:
         statusBgColor = AppColors.inputFill;
@@ -249,7 +254,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         border: Border.all(color: AppColors.divider),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: AppColors.black.withOpacity(0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

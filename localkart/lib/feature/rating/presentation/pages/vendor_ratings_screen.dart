@@ -192,11 +192,11 @@ class _VendorRatingsScreenState extends ConsumerState<VendorRatingsScreen> {
       ),
       child: Column(
         children: [
-          const Text(
+          Text(
             'Overall Rating',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.white70,
+              color: AppColors.white.withOpacity(0.7),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -210,7 +210,7 @@ class _VendorRatingsScreenState extends ConsumerState<VendorRatingsScreen> {
                 style: const TextStyle(
                   fontSize: 56,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.white,
                   height: 1.1,
                 ),
               ),
@@ -235,7 +235,7 @@ class _VendorRatingsScreenState extends ConsumerState<VendorRatingsScreen> {
                 child: Icon(
                   filled ? Icons.star_rounded : Icons.star_outline_rounded,
                   size: 24,
-                  color: filled ? AppColors.warning : Colors.white38,
+                  color: filled ? AppColors.warning : AppColors.white.withOpacity(0.38),
                 ),
               );
             }),
@@ -243,9 +243,9 @@ class _VendorRatingsScreenState extends ConsumerState<VendorRatingsScreen> {
           const SizedBox(height: 8),
           Text(
             '${stats.totalRatings} ${stats.totalRatings == 1 ? 'rating' : 'ratings'}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: Colors.white70,
+              color: AppColors.white.withOpacity(0.7),
             ),
           ),
         ],
@@ -504,13 +504,13 @@ class _VendorRatingsScreenState extends ConsumerState<VendorRatingsScreen> {
   Color _getStarColor(int star) {
     switch (star) {
       case 5:
-        return const Color(0xFF22C55E);
+        return AppColors.success;
       case 4:
-        return const Color(0xFF66BB6A);
+        return AppColors.successLight;
       case 3:
         return AppColors.warning;
       case 2:
-        return Colors.orange;
+        return AppColors.warning;
       case 1:
         return AppColors.error;
       default:

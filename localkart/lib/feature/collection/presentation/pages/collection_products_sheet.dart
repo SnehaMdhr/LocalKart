@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
 import 'package:localkart/core/utils/snackbar_utils.dart';
+import 'package:localkart/feature/cart/presentation/pages/cart_detail_screen.dart';
 import 'package:localkart/feature/cart/presentation/states/cart_state.dart';
 import 'package:localkart/feature/cart/presentation/view_model/cart_view_model.dart';
 import 'package:localkart/feature/collection/domain/entities/collection_entity.dart';
@@ -61,10 +62,13 @@ class _CollectionProductsDialogState
     if (mounted) {
       final cartState = ref.read(cartViewModelProvider);
       if (cartState.status == CartStatus.loaded) {
-        SnackbarUtils.showSuccess(
-          context,
-          "Added ${product.productName} to cart",
-          duration: const Duration(seconds: 2),
+        // Close the dialog and navigate to cart
+        final navigator = Navigator.of(context);
+        navigator.pop();
+        navigator.push(
+          MaterialPageRoute(
+            builder: (_) => const CartDetailScreen(),
+          ),
         );
       } else {
         SnackbarUtils.showError(
@@ -121,15 +125,9 @@ class _CollectionProductsDialogState
   Future<void> _addAllToCart() async {
     setState(() => _isAddingAll = true);
 
-    int addedCount = 0;
-    int failedCount = 0;
-
     for (final product in widget.products) {
       final productId = product.productId;
-      if (productId == null || productId.trim().isEmpty) {
-        failedCount++;
-        continue;
-      }
+      if (productId == null || productId.trim().isEmpty) continue;
 
       setState(() => _addingProductIds.add(productId));
 
@@ -139,33 +137,19 @@ class _CollectionProductsDialogState
       );
 
       setState(() => _addingProductIds.remove(productId));
-
-      if (mounted) {
-        final cartState = ref.read(cartViewModelProvider);
-        if (cartState.status == CartStatus.loaded) {
-          addedCount++;
-        } else {
-          failedCount++;
-        }
-      }
     }
 
     setState(() => _isAddingAll = false);
 
     if (mounted) {
-      if (failedCount > 0) {
-        SnackbarUtils.showWarning(
-          context,
-          "Added $addedCount item${addedCount == 1 ? '' : 's'} ($failedCount failed)",
-          duration: const Duration(seconds: 3),
-        );
-      } else {
-        SnackbarUtils.showSuccess(
-          context,
-          "Added all $addedCount item${addedCount == 1 ? '' : 's'} to cart!",
-          duration: const Duration(seconds: 3),
-        );
-      }
+      // Close the dialog and navigate to cart
+      final navigator = Navigator.of(context);
+      navigator.pop();
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => const CartDetailScreen(),
+        ),
+      );
     }
   }
 
@@ -260,7 +244,7 @@ class _CollectionProductsDialogState
                             width: 18,
                             height: 18,
                             child: CircularProgressIndicator(
-                              color: Colors.white,
+                            color: AppColors.white,
                               strokeWidth: 2,
                             ),
                           )
@@ -469,7 +453,7 @@ class _CollectionProductsDialogState
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
-                            color: Colors.white,
+                            color: AppColors.white,
                             strokeWidth: 2,
                           ),
                         )

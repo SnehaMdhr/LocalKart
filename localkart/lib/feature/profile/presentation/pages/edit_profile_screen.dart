@@ -454,7 +454,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                     ),
                                     child: const Icon(
                                       Icons.camera_alt,
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       size: 18,
                                     ),
                                   ),

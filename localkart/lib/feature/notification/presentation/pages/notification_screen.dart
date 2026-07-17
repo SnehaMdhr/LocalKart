@@ -162,7 +162,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
             label: const Text('Refresh'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
+              foregroundColor: AppColors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -215,7 +215,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
             label: const Text('Try Again'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
+              foregroundColor: AppColors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -417,7 +417,7 @@ class _NotificationCard extends StatelessWidget {
           color: AppColors.error,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 28),
+        child: const Icon(Icons.delete_outline_rounded, color: AppColors.white, size: 28),
       ),
       child: GestureDetector(
         onTap: onTap,
@@ -435,7 +435,7 @@ class _NotificationCard extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
+                color: AppColors.black.withValues(alpha: 0.04),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -653,9 +653,9 @@ class _NotificationCard extends StatelessWidget {
       case 'ORDER_REJECTED':
         return _IconInfo(Icons.cancel_outlined, AppColors.error);
       case 'ORDER_PREPARING':
-        return _IconInfo(Icons.restaurant_rounded, Colors.orange);
+        return _IconInfo(Icons.restaurant_rounded, AppColors.preparing);
       case 'OUT_FOR_DELIVERY':
-        return _IconInfo(Icons.delivery_dining_rounded, const Color(0xFF0288D1));
+        return _IconInfo(Icons.delivery_dining_rounded, AppColors.deliveryInfo);
       case 'DELIVERED':
         return _IconInfo(Icons.inventory_2_rounded, AppColors.grey);
       case 'ORDER_CANCELLED':

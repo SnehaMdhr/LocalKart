@@ -12,6 +12,13 @@ import { ShopModel } from "../model/shop.model";
 import { calculateDistance, estimateDeliveryTime } from "../utils/distance.util";
 import { NotificationService } from "./notification.service";
 import { UserModel } from "../model/user.model";
+import {
+  emitNewOrder,
+  emitOrderAccepted,
+  emitOrderRejected,
+  emitOrderUpdated,
+  emitOrderCancelled,
+} from "../socket";
 
 /**
  * Safely extract a MongoDB ObjectId string from a field that may be:
@@ -116,14 +123,17 @@ export class OrderService {
       console.error("Failed to send ORDER_PLACED notification:", error);
     }
 
-    // ── Send "New Order Received" to all approved shopkeepers ──
+    // ── Send "New Order Received" + emit real-time `new_order` to eligible vendors ──
     try {
       const approvedShops = await ShopModel.find({ status: "approved" }).populate("userId");
+      const shopkeeperIds: string[] = [];
 
       for (const shop of approvedShops) {
         const shopkeeperId = (shop.userId as any)?._id?.toString();
         if (!shopkeeperId) continue;
+        shopkeeperIds.push(shopkeeperId);
 
+        // Send in-app notification (existing behavior)
         const shopDoc = await ShopModel.findById(shop._id);
         const shopName = shopDoc?.shopName || '';
 
@@ -137,6 +147,12 @@ export class OrderService {
           orderNumber: order.orderNumber,
           shopName: shopName,
         });
+      }
+
+      // Emit real-time new_order event to all eligible vendors
+      const populatedOrder = await orderRepository.getOrderById(order._id.toString());
+      if (populatedOrder) {
+        emitNewOrder(populatedOrder, shopkeeperIds);
       }
     } catch (error) {
       console.error("Failed to notify vendors about new order:", error);
@@ -187,6 +203,19 @@ export class OrderService {
       );
     }
 
+    // ── Emit real-time `order_accepted` to all vendors ──
+    try {
+      const approvedShops = await ShopModel.find({ status: "approved" }).populate("userId");
+      const allShopkeeperIds: string[] = [];
+      for (const shop of approvedShops) {
+        const shopkeeperId = (shop.userId as any)?._id?.toString();
+        if (shopkeeperId) allShopkeeperIds.push(shopkeeperId);
+      }
+      emitOrderAccepted(updated, shopId, allShopkeeperIds);
+    } catch (error) {
+      console.error("Failed to emit order_accepted event:", error);
+    }
+
     // ── Send ORDER_ACCEPTED to customer ──
     try {
       const shop = await ShopModel.findOne({ userId: new mongoose.Types.ObjectId(shopId) });
@@ -221,6 +250,19 @@ export class OrderService {
 
     if (!updated) {
       throw new HttpError(404, "Order not found");
+    }
+
+    // ── Emit real-time `order_rejected` to all vendors ──
+    try {
+      const approvedShops = await ShopModel.find({ status: "approved" }).populate("userId");
+      const allShopkeeperIds: string[] = [];
+      for (const shop of approvedShops) {
+        const shopkeeperId = (shop.userId as any)?._id?.toString();
+        if (shopkeeperId) allShopkeeperIds.push(shopkeeperId);
+      }
+      emitOrderRejected(updated, shopId, allShopkeeperIds);
+    } catch (error) {
+      console.error("Failed to emit order_rejected event:", error);
     }
 
     // ── Send ORDER_REJECTED to customer ──
@@ -260,6 +302,28 @@ export class OrderService {
 
     const customerId = extractId(updated.customerId);
     const orderNumber = updated.orderNumber;
+
+    // ── Emit real-time `order_updated` event ──
+    try {
+      emitOrderUpdated(updated);
+    } catch (error) {
+      console.error("Failed to emit order_updated event:", error);
+    }
+
+    // ── Send ORDER_CANCELLED to all vendors if cancelled ──
+    if (data.status === "Cancelled") {
+      try {
+        const approvedShops = await ShopModel.find({ status: "approved" }).populate("userId");
+        const allShopkeeperIds: string[] = [];
+        for (const shop of approvedShops) {
+          const shopkeeperId = (shop.userId as any)?._id?.toString();
+          if (shopkeeperId) allShopkeeperIds.push(shopkeeperId);
+        }
+        emitOrderCancelled(updated, allShopkeeperIds);
+      } catch (error) {
+        console.error("Failed to emit order_cancelled event:", error);
+      }
+    }
 
     // ── Send status-specific notifications to customer ──
     switch (data.status) {

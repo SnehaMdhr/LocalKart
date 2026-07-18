@@ -653,7 +653,7 @@ class _NotificationCard extends StatelessWidget {
       case 'ORDER_REJECTED':
         return _IconInfo(Icons.cancel_outlined, AppColors.error);
       case 'ORDER_PREPARING':
-        return _IconInfo(Icons.restaurant_rounded, AppColors.preparing);
+        return _IconInfo(Icons.shopping_basket_rounded, AppColors.preparing);
       case 'OUT_FOR_DELIVERY':
         return _IconInfo(Icons.delivery_dining_rounded, AppColors.deliveryInfo);
       case 'DELIVERED':

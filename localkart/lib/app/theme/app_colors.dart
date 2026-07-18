@@ -26,7 +26,7 @@ class AppColors {
   static const Color border = Color(0xFFD9E2EC);
 
   // Status Colors
-  static const Color success = Color(0xFF22C55E);
+  static const Color success = Color(0xFF1EB154);
   static const Color error = Color(0xFFEF4444);
   static const Color warning = Color(0xFFF59E0B);
   static const Color preparing = Color(0xFFB8860B);

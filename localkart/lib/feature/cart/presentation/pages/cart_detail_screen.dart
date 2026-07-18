@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
 import 'package:localkart/core/utils/snackbar_utils.dart';
+import 'package:localkart/core/widgets/bottom_navigation_bar_for_customer.dart';
 import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/feature/cart/domain/entities/cart_entity.dart';
 import 'package:localkart/feature/cart/presentation/states/cart_state.dart';
@@ -195,7 +196,17 @@ class _CartDetailScreenState extends ConsumerState<CartDetailScreen> {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                   Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const BottomNavigationBarForCustomer(
+                        initialTabIndex: 1,
+                      ),
+                    ),
+                    (route) => false,
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(

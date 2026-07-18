@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
 import 'package:localkart/core/utils/snackbar_utils.dart';
+import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/feature/order/domain/entities/order_entity.dart';
 import 'package:localkart/feature/order/presentation/view_model/order_view_model.dart';
 
@@ -583,24 +584,12 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
 
           /// Mark as Paid — only for digital Pay on Delivery
           if (_shouldShowMarkPaid(order)) ...[
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _isProcessing ? null : () => _markOrderPaid(order),
-                icon: _isProcessing
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white))
-                    : const Icon(Icons.check_circle_outline, size: 18),
-                label: Text(
-                  _isProcessing ? "Confirming..." : "Mark as Paid",
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.success,
-                  foregroundColor: AppColors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-              ),
+            CustomButton(
+              text: _isProcessing ? "Confirming..." : "Mark as Paid",
+              onPressed: () => _markOrderPaid(order),
+              backgroundColor: AppColors.primary,
+              isLoading: _isProcessing,
+              isEnabled: !_isProcessing,
             ),
             const SizedBox(height: 16),
           ],

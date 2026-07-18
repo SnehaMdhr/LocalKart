@@ -18,6 +18,13 @@ class SocketService {
   void Function(Map<String, dynamic>)? onNewNotification;
   void Function(int)? onUnreadCountUpdate;
 
+  // Callbacks for real-time order events
+  void Function(Map<String, dynamic>)? onNewOrder;
+  void Function(Map<String, dynamic>)? onOrderAccepted;
+  void Function(Map<String, dynamic>)? onOrderRejected;
+  void Function(Map<String, dynamic>)? onOrderCancelled;
+  void Function(Map<String, dynamic>)? onOrderUpdated;
+
   SocketService({required TokenService tokenService})
       : _tokenService = tokenService;
 
@@ -60,6 +67,42 @@ class SocketService {
         }
       });
 
+      // Real-time order events
+      _socket!.on('new_order', (data) {
+        debugPrint('[Socket] New order received via socket');
+        if (onNewOrder != null && data is Map<String, dynamic>) {
+          onNewOrder!(data);
+        }
+      });
+
+      _socket!.on('order_accepted', (data) {
+        debugPrint('[Socket] Order accepted event received');
+        if (onOrderAccepted != null && data is Map<String, dynamic>) {
+          onOrderAccepted!(data);
+        }
+      });
+
+      _socket!.on('order_rejected', (data) {
+        debugPrint('[Socket] Order rejected event received');
+        if (onOrderRejected != null && data is Map<String, dynamic>) {
+          onOrderRejected!(data);
+        }
+      });
+
+      _socket!.on('order_cancelled', (data) {
+        debugPrint('[Socket] Order cancelled event received');
+        if (onOrderCancelled != null && data is Map<String, dynamic>) {
+          onOrderCancelled!(data);
+        }
+      });
+
+      _socket!.on('order_updated', (data) {
+        debugPrint('[Socket] Order updated event received');
+        if (onOrderUpdated != null && data is Map<String, dynamic>) {
+          onOrderUpdated!(data);
+        }
+      });
+
       _socket!.on('disconnect', (reason) {
         _isConnected = false;
         debugPrint('[Socket] Disconnected: $reason');
@@ -86,6 +129,11 @@ class SocketService {
     if (_socket != null) {
       _socket!.off('new_notification');
       _socket!.off('unread_count');
+      _socket!.off('new_order');
+      _socket!.off('order_accepted');
+      _socket!.off('order_rejected');
+      _socket!.off('order_cancelled');
+      _socket!.off('order_updated');
       _socket!.off('connect');
       _socket!.off('disconnect');
       _socket!.off('connect_error');
@@ -109,5 +157,10 @@ class SocketService {
     disconnect();
     onNewNotification = null;
     onUnreadCountUpdate = null;
+    onNewOrder = null;
+    onOrderAccepted = null;
+    onOrderRejected = null;
+    onOrderCancelled = null;
+    onOrderUpdated = null;
   }
 }

@@ -12,6 +12,7 @@ import 'package:localkart/feature/auth/domain/usecases/reset_password_usecase.da
 import 'package:localkart/feature/auth/presentation/states/auth_state.dart';
 import 'package:localkart/feature/notification/domain/entities/notification_entity.dart';
 import 'package:localkart/feature/notification/presentation/view_model/notification_view_model.dart';
+import 'package:localkart/feature/order/presentation/view_model/order_view_model.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
 
@@ -105,6 +106,7 @@ class AuthViewModel extends Notifier<AuthState> {
   void _connectSocket() {
     final socketService = ref.read(socketServiceProvider);
     final notifVM = ref.read(notificationViewModelProvider.notifier);
+    final orderVM = ref.read(orderViewModelProvider.notifier);
 
     socketService.onNewNotification = (data) {
       final notifEntity = NotificationEntity(
@@ -127,6 +129,32 @@ class AuthViewModel extends Notifier<AuthState> {
 
     socketService.onUnreadCountUpdate = (count) {
       notifVM.updateUnreadCountFromSocket(count);
+    };
+
+    // ── Real-Time Order Events ──
+    socketService.onNewOrder = (data) {
+      print('[Socket] New order arrived via socket!');
+      orderVM.insertIncomingOrder(data);
+    };
+
+    socketService.onOrderAccepted = (data) {
+      print('[Socket] Order accepted via socket!');
+      orderVM.removeAcceptedOrder(data);
+    };
+
+    socketService.onOrderRejected = (data) {
+      print('[Socket] Order rejected via socket!');
+      orderVM.removeOrderFromPending(data);
+    };
+
+    socketService.onOrderCancelled = (data) {
+      print('[Socket] Order cancelled via socket!');
+      orderVM.removeCancelledOrder(data);
+    };
+
+    socketService.onOrderUpdated = (data) {
+      print('[Socket] Order updated via socket!');
+      orderVM.updateOrderFromSocket(data);
     };
 
     socketService.connect();

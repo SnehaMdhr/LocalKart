@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 class ApiEndpoints {
   ApiEndpoints._();
   static const bool isPhysicalDevice = true;
-  static const String compIpAddress = "10.193.90.231";
+  static const String compIpAddress = "10.15.10.231";
   static String get baseUrl {
     if (isPhysicalDevice) {
       return "http://$compIpAddress:3000/api";

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/feature/order/domain/entities/order_entity.dart';
@@ -14,7 +13,6 @@ class VendorDashboard extends ConsumerStatefulWidget {
 }
 
 class _VendorDashboardState extends ConsumerState<VendorDashboard> {
-  int _previousPendingCount = -1;
 
   @override
   void initState() {
@@ -35,31 +33,6 @@ class _VendorDashboardState extends ConsumerState<VendorDashboard> {
     final shopEntity = shopState.shopEntity;
     final stats = _calculateStats(assignedOrders, pendingOrders);
     final recentOrders = _getRecentOrders(allOrders);
-
-    // Show SnackBar when a new order arrives via socket
-    // Use pendingOrders nullability to detect when real data first loads
-    final hasRealData = orderState.pendingOrders != null;
-
-    if (_previousPendingCount == -1 && hasRealData) {
-      // Initial load complete: capture baseline count, no SnackBar
-      _previousPendingCount = pendingOrders.length;
-    } else if (_previousPendingCount >= 0 &&
-        pendingOrders.length > _previousPendingCount) {
-      // Genuine new order arrived via socket
-      final newOrder = pendingOrders.firstOrNull;
-      if (newOrder != null) {
-        final orderNum = newOrder.orderNumber ??
-            (newOrder.orderId ?? '').substring(0, 6).toUpperCase();
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            _showNewOrderSnackbar(context, orderNum);
-          }
-        });
-      }
-      _previousPendingCount = pendingOrders.length;
-    } else if (_previousPendingCount >= 0) {
-      _previousPendingCount = pendingOrders.length;
-    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -205,60 +178,6 @@ class _VendorDashboardState extends ConsumerState<VendorDashboard> {
         ),
       ),
     );
-  }
-
-  void _showNewOrderSnackbar(BuildContext context, String orderNumber) {
-    ScaffoldMessenger.of(context).removeCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.shopping_bag, color: Colors.white, size: 24),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '🛒 New Order Received',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontSize: 15,
-                    ),
-                  ),
-                  Text(
-                    'Order #$orderNumber',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: const Color(0xFF2E7D32),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: 'View',
-          textColor: Colors.white,
-          onPressed: () {
-            // Navigate to order screen already handled via bottom nav
-          },
-        ),
-      ),
-    );
-
-    // Optional: Haptic feedback
-    HapticFeedback.heavyImpact();
   }
 
   _Stats _calculateStats(List<OrderEntity> assignedOrders, List<OrderEntity> pendingOrders) {

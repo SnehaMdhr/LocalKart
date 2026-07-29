@@ -241,11 +241,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           /// Categories
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(bottom: 4),
             child: Row(
               children: [
                 // "All" chip to reset filter
                 _CategoryChip(
                   label: 'All',
+                  icon: Icons.grid_view_rounded,
                   isSelected: _selectedCategory == null,
                   onTap: () {
                     setState(() {
@@ -253,11 +255,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     });
                   },
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 // Category items
                 ..._categories.map(
                   (cat) => Padding(
-                    padding: const EdgeInsets.only(right: 10),
+                    padding: const EdgeInsets.only(right: 8),
                     child: _CategoryItem(
                       icon: cat.icon,
                       label: cat.label,
@@ -378,14 +380,16 @@ class _CategoryData {
   });
 }
 
-/// A small chip for the "All" option
+/// A compact chip for the "All" option
 class _CategoryChip extends StatelessWidget {
   final String label;
+  final IconData icon;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _CategoryChip({
     required this.label,
+    required this.icon,
     required this.isSelected,
     required this.onTap,
   });
@@ -395,28 +399,56 @@ class _CategoryChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : AppColors.card,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected ? AppColors.primary : AppColors.divider,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: isSelected ? AppColors.white : AppColors.textPrimary,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.white.withValues(alpha: 0.25) : AppColors.primaryExtraLight,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: isSelected ? AppColors.white : AppColors.primary,
+                size: 16,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? AppColors.white : AppColors.textPrimary,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Category item with icon, label, and selection state
+/// Category item as a compact horizontal chip with icon + label inline
 class _CategoryItem extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -434,28 +466,61 @@ class _CategoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bgColor = isSelected ? AppColors.primary : color;
+    final fgColor = isSelected ? AppColors.white : AppColors.primary;
+    final textColor = isSelected ? AppColors.primary : AppColors.textSecondary;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        child: Column(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primaryExtraLight
+              : AppColors.card,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primary.withValues(alpha: 0.4)
+                : AppColors.divider,
+            width: isSelected ? 1.5 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.12),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: isSelected ? AppColors.primary : color,
-              child: Icon(
-                icon,
-                color: isSelected ? AppColors.white : AppColors.primary,
-                size: 24,
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : bgColor,
+                shape: BoxShape.circle,
               ),
+              child: Icon(icon, color: fgColor, size: 16),
             ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight:
+                      isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: textColor,
+                ),
               ),
             ),
           ],

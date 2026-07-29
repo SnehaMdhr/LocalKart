@@ -202,7 +202,15 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 ...items.map(
                   (item) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: _buildCheckoutItem(item),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.card,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.divider),
+                      ),
+                      padding: const EdgeInsets.all(14),
+                      child: _buildCheckoutItem(item),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -220,7 +228,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   color: AppColors.card,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: AppColors.black.withOpacity(0.05),
                       blurRadius: 10,
                       offset: const Offset(0, -4),
                     ),
@@ -981,7 +989,7 @@ class _AddressPickerSheetState extends State<_AddressPickerSheet> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(width: 12, height: 4,
-                                decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(2))),
+                                decoration: BoxDecoration(color: AppColors.black.withOpacity(0.26), borderRadius: BorderRadius.circular(2))),
                             const SizedBox(height: 2),
                             const Icon(Icons.location_on, size: 40, color: AppColors.primary),
                           ],
@@ -990,7 +998,7 @@ class _AddressPickerSheetState extends State<_AddressPickerSheet> {
                     ),
                     if (_isReversingGeocoding || _isDetectingLocation)
                       Container(
-                        color: Colors.black26,
+                        color: AppColors.black.withOpacity(0.26),
                         child: const Center(child: CircularProgressIndicator(color: AppColors.white)),
                       ),
                   ],

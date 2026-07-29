@@ -31,6 +31,10 @@ export const shopSchema = z.object({
     "rejected",
     "suspended"
   ]).default("pending"),
+
+  averageRating: z.number().min(0).max(5).default(0),
+
+  totalRatings: z.number().int().nonnegative().default(0),
 });
 
 export type ShopType = z.infer<typeof shopSchema>;

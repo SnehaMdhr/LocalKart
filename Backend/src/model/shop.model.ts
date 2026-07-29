@@ -67,6 +67,19 @@ const ShopSchema: Schema = new Schema<ShopType>(
       enum: ["pending", "approved", "rejected", "suspended"],
       default: "pending",
     },
+
+    averageRating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+
+    totalRatings: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   { timestamps: true }
 );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
 import 'package:localkart/core/utils/snackbar_utils.dart';
+import 'package:localkart/core/widgets/custom_button.dart';
 import 'package:localkart/feature/order/domain/entities/order_entity.dart';
 import 'package:localkart/feature/order/presentation/view_model/order_view_model.dart';
 
@@ -300,9 +301,9 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
                           : null,
                     ),
                     child: isCompleted && !isCurrent
-                        ? const Icon(Icons.check, size: 12, color: Colors.white)
+                        ? const Icon(Icons.check, size: 12, color: AppColors.white)
                         : showError
-                            ? const Icon(Icons.close, size: 12, color: Colors.white)
+                            ? const Icon(Icons.close, size: 12, color: AppColors.white)
                             : null,
                   ),
                 ),
@@ -403,12 +404,13 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
           child: ElevatedButton.icon(
             onPressed: _isProcessing ? null : () => _acceptOrder(order),
             icon: _isProcessing
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2,    
+                    color: AppColors.white))
                 : const Icon(Icons.check, size: 18),
             label: Text(_isProcessing ? "Processing..." : "Accept Order", style: const TextStyle(fontSize: 14)),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
+              foregroundColor: AppColors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
@@ -429,7 +431,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
       child: ElevatedButton.icon(
         onPressed: _isProcessing ? null : () => _advanceStatus(order, allStatuses[currentIndex]),
         icon: _isProcessing
-            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white))
             : const Icon(Icons.arrow_forward, size: 18),
         label: Text(
           _isProcessing ? "Updating..." : "Mark as $nextStatus",
@@ -437,7 +439,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: AppColors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(vertical: 16),
         ),
@@ -582,24 +584,12 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
 
           /// Mark as Paid — only for digital Pay on Delivery
           if (_shouldShowMarkPaid(order)) ...[
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _isProcessing ? null : () => _markOrderPaid(order),
-                icon: _isProcessing
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Icon(Icons.check_circle_outline, size: 18),
-                label: Text(
-                  _isProcessing ? "Confirming..." : "Mark as Paid",
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.success,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-              ),
+            CustomButton(
+              text: _isProcessing ? "Confirming..." : "Mark as Paid",
+              onPressed: () => _markOrderPaid(order),
+              backgroundColor: AppColors.primary,
+              isLoading: _isProcessing,
+              isEnabled: !_isProcessing,
             ),
             const SizedBox(height: 16),
           ],
@@ -839,19 +829,19 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFE1F5FE).withValues(alpha: 0.5),
+        color: AppColors.deliveryInfoBg.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF0288D1).withValues(alpha: 0.2)),
+        border: Border.all(color: AppColors.deliveryInfo.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF0288D1).withValues(alpha: 0.1),
+              color: AppColors.deliveryInfo.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.delivery_dining, color: Color(0xFF0288D1), size: 24),
+            child: const Icon(Icons.delivery_dining, color: AppColors.deliveryInfo, size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -865,7 +855,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
-                    color: Color(0xFF0288D1),
+                    color: AppColors.deliveryInfo,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -916,14 +906,14 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF4E5),
+        color: AppColors.warningLight,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline, color: Colors.orange, size: 22),
+          const Icon(Icons.info_outline, color: AppColors.warning, size: 22),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -934,7 +924,7 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: Color(0xFFB8860B),
+                    color: AppColors.preparing,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -978,8 +968,8 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
       case "Pending": return AppColors.warning;
       case "Accepted": return AppColors.primary;
       case "Rejected": return AppColors.error;
-      case "Preparing": return const Color(0xFFB8860B);
-      case "Out for Delivery": return const Color(0xFF0288D1);
+      case "Preparing": return AppColors.preparing;
+      case "Out for Delivery": return AppColors.deliveryInfo;
       case "Delivered": return AppColors.success;
       case "Cancelled": return AppColors.textSecondary;
       default: return AppColors.textSecondary;
@@ -989,12 +979,12 @@ class _VendorOrderStatusScreenState extends ConsumerState<VendorOrderStatusScree
   Color _statusBgColor(String status) {
     switch (status) {
       case "Pending": return AppColors.warning.withOpacity(0.15);
-      case "Accepted": return const Color(0xFFE3F5E8);
-      case "Rejected": return const Color(0xFFFFEEEE);
-      case "Preparing": return const Color(0xFFFFF4D6);
-      case "Out for Delivery": return const Color(0xFFE1F5FE);
+      case "Accepted": return AppColors.categoryVegetable;
+      case "Rejected": return AppColors.logoutBackground;
+      case "Preparing": return AppColors.categoryDairy;
+      case "Out for Delivery": return AppColors.deliveryInfoBg;
       case "Delivered": return AppColors.success.withOpacity(0.15);
-      case "Cancelled": return const Color(0xFFF3E5F5);
+      case "Cancelled": return AppColors.categoryPersonal;
       default: return AppColors.inputFill;
     }
   }

@@ -83,7 +83,7 @@ class OrderStatusScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(.05),
+                      color: AppColors.black.withOpacity(.05),
                       blurRadius: 12,
                     ),
                   ],
@@ -311,7 +311,7 @@ class OrderStatusScreen extends StatelessWidget {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.white,
                     minimumSize: const Size(double.infinity, 54),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -456,7 +456,7 @@ class OrderStatusScreen extends StatelessWidget {
                         : null,
                   ),
                   child: completed && !current
-                      ? const Icon(Icons.check, size: 12, color: Colors.white)
+                      ? const Icon(Icons.check, size: 12, color: AppColors.white)
                       : null,
                 ),
                 if (!isLast)

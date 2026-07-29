@@ -37,13 +37,13 @@ class HelpCenterScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.support_agent_rounded,
-                      color: Colors.white,
-                      size: 42,
+                    color: AppColors.white.withOpacity(.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.support_agent_rounded,
+                    color: AppColors.white,
+                    size: 42,
                     ),
                   ),
 
@@ -52,7 +52,7 @@ class HelpCenterScreen extends StatelessWidget {
                   const Text(
                     "Need Assistance?",
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
@@ -60,11 +60,11 @@ class HelpCenterScreen extends StatelessWidget {
 
                   const SizedBox(height: 10),
 
-                  const Text(
+                  Text(
                     "We're here to make your LocalKart experience smooth and hassle-free. Browse our help topics or contact our support team anytime.",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white70,
+                      color: AppColors.white.withOpacity(0.7),
                       height: 1.6,
                     ),
                   ),

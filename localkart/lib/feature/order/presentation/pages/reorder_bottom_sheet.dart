@@ -46,10 +46,7 @@ class _ReorderDialogState extends ConsumerState<ReorderDialog> {
   Future<void> _proceedToCheckout() async {
     if (_items.isEmpty) return;
 
-    // Dismiss the dialog
-    Navigator.pop(context);
-
-    // Add each remaining item to the cart
+    // Add each remaining item to the cart FIRST (dialog still open, context valid)
     for (final item in _items) {
       await ref.read(cartViewModelProvider.notifier).addToCart(
         item.productId,
@@ -57,12 +54,19 @@ class _ReorderDialogState extends ConsumerState<ReorderDialog> {
       );
     }
 
-    if (!context.mounted) return;
+    if (!mounted) return;
+
+    // Dismiss the dialog
+    Navigator.pop(context);
+
+    if (!mounted) return;
     SnackbarUtils.showSuccess(
       context,
       "${_items.length} item${_items.length != 1 ? 's' : ''} added to cart",
       duration: const Duration(seconds: 2),
     );
+
+    if (!mounted) return;
 
     // Navigate to checkout screen
     Navigator.push(

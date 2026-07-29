@@ -4,6 +4,8 @@ import 'package:localkart/app/theme/app_colors.dart';
 import 'package:localkart/core/api/api_endpoints.dart';
 import 'package:localkart/feature/order/domain/entities/order_entity.dart';
 import 'package:localkart/feature/order/presentation/view_model/order_view_model.dart';
+import 'package:localkart/feature/rating/presentation/states/rating_state.dart';
+import 'package:localkart/feature/rating/presentation/view_model/rating_view_model.dart';
 
 class OrderDetailScreen extends ConsumerStatefulWidget {
   final OrderEntity order;
@@ -18,6 +20,18 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   bool _shouldShowEtd(String status) {
     const etdStatuses = ["Out for Delivery", "Delivered"];
     return etdStatuses.contains(status);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch vendor ratings if the order has been accepted by a vendor
+    final shopId = widget.order.shopId;
+    if (shopId != null && shopId.isNotEmpty) {
+      Future.microtask(() {
+        ref.read(ratingViewModelProvider.notifier).getVendorRatings(shopId);
+      });
+    }
   }
 
   @override
@@ -74,7 +88,15 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           const SizedBox(height: 12),
           ...mergedItems.map((item) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: _buildOrderItem(item),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.card,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.divider),
+              ),
+              padding: const EdgeInsets.all(14),
+              child: _buildOrderItem(item),
+            ),
           )),
           const SizedBox(height: 24),
           _sectionHeader("Payment Summary"),
@@ -89,10 +111,6 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
             const SizedBox(height: 24),
           ],
 
-          _sectionHeader("Delivery Address"),
-          const SizedBox(height: 12),
-          _buildAddressCard(widget.order),
-          const SizedBox(height: 30),
           Center(
             child: Text(
               "Order ID: ${widget.order.orderId ?? 'N/A'}",
@@ -199,19 +217,19 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFE1F5FE).withValues(alpha: 0.5),
+        color: AppColors.deliveryInfoBg.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF0288D1).withValues(alpha: 0.2)),
+        border: Border.all(color: AppColors.deliveryInfo.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFF0288D1).withValues(alpha: 0.1),
+              color: AppColors.deliveryInfo.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.delivery_dining, color: Color(0xFF0288D1), size: 28),
+            child: const Icon(Icons.delivery_dining, color: AppColors.deliveryInfo, size: 28),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -225,7 +243,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: Color(0xFF0288D1),
+                    color: AppColors.deliveryInfo,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -276,14 +294,14 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF4E5),
+        color: AppColors.warningLight,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline, color: Colors.orange, size: 22),
+          const Icon(Icons.info_outline, color: AppColors.warning, size: 22),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -294,7 +312,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: Color(0xFFB8860B),
+                    color: AppColors.preparing,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -353,7 +371,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Order #${_shortId(order.orderId ?? '')}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary)),
+                Text("Order #${_shortId(order.orderId ?? '')} Payment Status", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary)),
                 const SizedBox(height: 4),
                 Text(_formatDate(order.createdAt ?? ''), style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
               ],
@@ -383,6 +401,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
+          
           child: SizedBox(
             width: 72, height: 72,
             child: fullUrl != null
@@ -446,6 +465,10 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   }
 
   Widget _buildVendorCard(OrderEntity order) {
+    // Inline rating stats
+    final ratingState = ref.watch(ratingViewModelProvider);
+    final stats = ratingState.vendorStats;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -457,6 +480,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
@@ -471,11 +495,29 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    /// Shop name
                     Text(
                       order.shopName ?? order.vendorName ?? "Shop",
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
                     ),
                     const SizedBox(height: 4),
+                    /// Rating row — small, below the shop name
+                    if (stats != null && stats.totalRatings > 0)
+                      _buildCompactRatingRow(stats)
+                    else if (stats != null && stats.totalRatings == 0)
+                      Row(
+                        children: [
+                          const Icon(Icons.star_outline_rounded, size: 14, color: AppColors.textSecondary),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'No ratings yet',
+                            style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                          ),
+                        ],
+                      )
+                    else
+                      const SizedBox.shrink(),
+                    const SizedBox(height: 2),
                     Text(
                       "Accepted your order",
                       style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
@@ -522,40 +564,41 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     );
   }
 
-  Widget _buildAddressCard(OrderEntity order) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.divider)),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: AppColors.primaryExtraLight, borderRadius: BorderRadius.circular(12)),
-            child: const Icon(Icons.location_on_outlined, color: AppColors.primary, size: 22),
+  /// Compact inline rating row — small stars with average number
+  Widget _buildCompactRatingRow(VendorRatingStats stats) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          stats.averageRating.toStringAsFixed(1),
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: AppColors.warning,
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  order.deliveryAddress.isNotEmpty ? order.deliveryAddress : "No address provided",
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, height: 1.5),
-                ),
-                if (order.latitude != null && order.longitude != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      "${order.latitude!.toStringAsFixed(6)}, ${order.longitude!.toStringAsFixed(6)}",
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
-                    ),
-                  ),
-              ],
+        ),
+        const SizedBox(width: 2),
+        ...List.generate(5, (index) {
+          final starNumber = index + 1;
+          final filled = starNumber <= stats.averageRating.round();
+          return Padding(
+            padding: const EdgeInsets.only(right: 1),
+            child: Icon(
+              filled ? Icons.star_rounded : Icons.star_outline_rounded,
+              size: 14,
+              color: filled ? AppColors.warning : AppColors.grey.withValues(alpha: 0.3),
             ),
+          );
+        }),
+        const SizedBox(width: 4),
+        Text(
+          '(${stats.totalRatings})',
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 11,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -577,12 +620,12 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     Color bgColor, textColor;
     switch (status) {
       case "Pending": bgColor = AppColors.warning.withValues(alpha: 0.15); textColor = AppColors.warning; break;
-      case "Accepted": bgColor = const Color(0xFFE3F5E8); textColor = AppColors.primary; break;
-      case "Rejected": bgColor = const Color(0xFFFFEEEE); textColor = AppColors.error; break;
-      case "Preparing": bgColor = const Color(0xFFFFF4D6); textColor = Color(0xFFB8860B); break;
-      case "Out for Delivery": bgColor = const Color(0xFFE1F5FE); textColor = Color(0xFF0288D1); break;
+      case "Accepted": bgColor = AppColors.categoryVegetable; textColor = AppColors.primary; break;
+      case "Rejected": bgColor = AppColors.logoutBackground; textColor = AppColors.error; break;
+      case "Preparing": bgColor = AppColors.categoryDairy; textColor = AppColors.preparing; break;
+      case "Out for Delivery": bgColor = AppColors.deliveryInfoBg; textColor = AppColors.deliveryInfo; break;
       case "Delivered": bgColor = AppColors.success.withValues(alpha: 0.15); textColor = AppColors.success; break;
-      case "Cancelled": bgColor = const Color(0xFFF3E5F5); textColor = AppColors.textSecondary; break;
+      case "Cancelled": bgColor = AppColors.categoryPersonal; textColor = AppColors.textSecondary; break;
       default: bgColor = AppColors.inputFill; textColor = AppColors.textSecondary;
     }
     return Container(
@@ -597,8 +640,8 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
       case "Pending": return AppColors.warning;
       case "Accepted": return AppColors.primary;
       case "Rejected": return AppColors.error;
-      case "Preparing": return const Color(0xFFB8860B);
-      case "Out for Delivery": return const Color(0xFF0288D1);
+      case "Preparing": return AppColors.preparing;
+      case "Out for Delivery": return AppColors.deliveryInfo;
       case "Delivered": return AppColors.success;
       case "Cancelled": return AppColors.textSecondary;
       default: return AppColors.textSecondary;

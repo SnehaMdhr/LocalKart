@@ -24,6 +24,8 @@ class VendorOrderScreen extends ConsumerStatefulWidget {
 }
 
 class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
+  int _previousPendingCount = -1;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +47,31 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
             .contains(o.status))
         .toList();
 
+    // Show SnackBar when a new order arrives via socket
+    // Use pendingOrders nullability to detect when real data first loads
+    final hasRealData = orderState.pendingOrders != null;
+
+    if (_previousPendingCount == -1 && hasRealData) {
+      // Initial load complete: capture baseline count, no SnackBar
+      _previousPendingCount = pendingOrders.length;
+    } else if (_previousPendingCount >= 0 &&
+        pendingOrders.length > _previousPendingCount) {
+      // Genuine new order arrived via socket
+      final newOrder = pendingOrders.firstOrNull;
+      if (newOrder != null) {
+        final orderNum = newOrder.orderNumber ??
+            (newOrder.orderId ?? '').substring(0, 6).toUpperCase();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _showNewOrderSnackbar(context, orderNum, newOrder);
+          }
+        });
+      }
+      _previousPendingCount = pendingOrders.length;
+    } else if (_previousPendingCount >= 0) {
+      _previousPendingCount = pendingOrders.length;
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: _buildBody(
@@ -52,6 +79,64 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
         pendingOrders,
         activeOrders,
         completedOrders,
+      ),
+    );
+  }
+
+  void _showNewOrderSnackbar(
+      BuildContext context, String orderNumber, OrderEntity order) {
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.shopping_bag, color: Colors.white, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '🛒 New Order Received',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 15,
+                    ),
+                  ),
+                  Text(
+                    'Order #$orderNumber',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).removeCurrentSnackBar();
+                VendorOrderScreen.navigateToStatus(context, order);
+              },
+              child: const Text(
+                'Tap to View',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF2E7D32),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        duration: const Duration(seconds: 4),
       ),
     );
   }
@@ -98,7 +183,7 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
               label: const Text("Retry"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: AppColors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -625,7 +710,7 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
                         style: TextStyle(fontSize: 13)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppColors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -710,7 +795,7 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
                     style: const TextStyle(fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AppColors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -908,17 +993,17 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
       case "Pending":
         return AppColors.warning.withValues(alpha: 0.15);
       case "Accepted":
-        return const Color(0xFFE3F5E8);
+        return AppColors.categoryVegetable;
       case "Rejected":
-        return const Color(0xFFFFEEEE);
+        return AppColors.logoutBackground;
       case "Preparing":
-        return const Color(0xFFFFF4D6);
+        return AppColors.categoryDairy;
       case "Out for Delivery":
-        return const Color(0xFFE1F5FE);
+        return AppColors.deliveryInfoBg;
       case "Delivered":
         return AppColors.success.withValues(alpha: 0.15);
       case "Cancelled":
-        return const Color(0xFFF3E5F5);
+        return AppColors.categoryPersonal;
       default:
         return AppColors.inputFill;
     }
@@ -933,9 +1018,9 @@ class _VendorOrderScreenState extends ConsumerState<VendorOrderScreen> {
       case "Rejected":
         return AppColors.error;
       case "Preparing":
-        return const Color(0xFFB8860B);
+        return AppColors.preparing;
       case "Out for Delivery":
-        return const Color(0xFF0288D1);
+        return AppColors.deliveryInfo;
       case "Delivered":
         return AppColors.success;
       case "Cancelled":

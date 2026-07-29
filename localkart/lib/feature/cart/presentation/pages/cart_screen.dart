@@ -80,7 +80,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
             const SizedBox(height: 28),
 
             _sectionHeader(
-              "My Collections",
+              "Saved Bundles",
               "See All",
               onAction: () {
                 Navigator.push(
@@ -218,7 +218,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                     itemCount > 0
                         ? "$itemCount item${itemCount == 1 ? '' : 's'} \u2022 Rs. $totalPrice"
                         : "No items yet",
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                    style: TextStyle(color: AppColors.white.withOpacity(0.7), fontSize: 13),
                   ),
                 ],
               ),
@@ -263,7 +263,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.divider),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(.03), blurRadius: 8),
+          BoxShadow(color: AppColors.black.withOpacity(.03), blurRadius: 8),
         ],
       ),
       child: Column(
@@ -353,7 +353,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
       case "Accepted":
       case "Preparing":
       case "Out for Delivery":
-        statusBgColor = const Color(0xFFE3F5E8);
+        statusBgColor = AppColors.categoryVegetable;
         statusTextColor = AppColors.primary;
         break;
       case "Delivered":
@@ -362,7 +362,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
         break;
       case "Rejected":
       case "Cancelled":
-        statusBgColor = const Color(0xFFFFEEEE);
+        statusBgColor = AppColors.logoutBackground;
         statusTextColor = AppColors.error;
         break;
       default:

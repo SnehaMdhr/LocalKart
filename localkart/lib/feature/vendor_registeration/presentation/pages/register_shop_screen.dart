@@ -332,7 +332,7 @@ class _RegisterShopScreenState extends ConsumerState<RegisterShopScreen> {
                       borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(
+                          color: AppColors.black.withValues(
                             alpha: 0.08,
                           ),
                           blurRadius: 18,
@@ -432,7 +432,7 @@ class _RegisterShopScreenState extends ConsumerState<RegisterShopScreen> {
                                       category,
                                       style: TextStyle(
                                         color: isSelected
-                                            ? Colors.white
+                                            ? AppColors.white
                                             : AppColors.textPrimary,
                                         fontWeight: isSelected
                                             ? FontWeight.w600
@@ -451,7 +451,7 @@ class _RegisterShopScreenState extends ConsumerState<RegisterShopScreen> {
                                       });
                                     },
                                     selectedColor: AppColors.primary,
-                                    checkmarkColor: Colors.white,
+                                    checkmarkColor: AppColors.white,
                                     backgroundColor: Colors.transparent,
                                     side: BorderSide(
                                       color: isSelected
@@ -625,7 +625,7 @@ class _RegisterShopScreenState extends ConsumerState<RegisterShopScreen> {
                                 ),
                                 if (_isLoadingLocation || _isReversingGeocoding)
                                   Container(
-                                    color: Colors.black26,
+                                    color: AppColors.black.withOpacity(0.26),
                                     child: const Center(child: CircularProgressIndicator(color: AppColors.white)),
                                   )
                                 else
@@ -635,7 +635,7 @@ class _RegisterShopScreenState extends ConsumerState<RegisterShopScreen> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Container(width: 12, height: 4,
-                                              decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(2))),
+                                              decoration: BoxDecoration(color: AppColors.black.withOpacity(0.26), borderRadius: BorderRadius.circular(2))),
                                           const SizedBox(height: 2),
                                           const Icon(Icons.location_on, size: 40, color: AppColors.primary),
                                         ],

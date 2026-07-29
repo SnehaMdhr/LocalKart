@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:localkart/core/config/oauth_config.dart';
+import 'package:localkart/core/services/socket_service.dart';
 import 'package:localkart/core/services/storage/token_service.dart';
 import 'package:localkart/feature/auth/data/repositories/auth_repository.dart';
 import 'package:localkart/feature/auth/domain/usecases/get_current_user_usecase.dart';
@@ -9,6 +10,9 @@ import 'package:localkart/feature/auth/domain/usecases/logout_usecase.dart';
 import 'package:localkart/feature/auth/domain/usecases/request_password_reset_usecase.dart';
 import 'package:localkart/feature/auth/domain/usecases/reset_password_usecase.dart';
 import 'package:localkart/feature/auth/presentation/states/auth_state.dart';
+import 'package:localkart/feature/notification/domain/entities/notification_entity.dart';
+import 'package:localkart/feature/notification/presentation/view_model/notification_view_model.dart';
+import 'package:localkart/feature/order/presentation/view_model/order_view_model.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
 
@@ -93,12 +97,74 @@ class AuthViewModel extends Notifier<AuthState> {
           status: AuthStatus.authenticated,
           authEntity: authEntity,
         );
+        // Connect Socket.IO after successful login
+        _connectSocket();
       },
     );
   }
 
+  void _connectSocket() {
+    final socketService = ref.read(socketServiceProvider);
+    final notifVM = ref.read(notificationViewModelProvider.notifier);
+    final orderVM = ref.read(orderViewModelProvider.notifier);
+
+    socketService.onNewNotification = (data) {
+      final notifEntity = NotificationEntity(
+        receiverId: data['receiverId'] ?? '',
+        receiverRole: data['receiverRole'] ?? 'Customer',
+        title: data['title'] ?? '',
+        message: data['message'] ?? '',
+        type: data['type'] ?? 'SYSTEM',
+        orderId: data['orderId'] as String?,
+        shopId: data['shopId'] as String?,
+        orderNumber: data['orderNumber'] as String?,
+        shopName: data['shopName'] as String?,
+        isRead: data['isRead'] as bool? ?? false,
+        notificationId: data['_id'] as String?,
+        createdAt: data['createdAt'] as String?,
+        updatedAt: data['updatedAt'] as String?,
+      );
+      notifVM.addNotificationFromSocket(notifEntity);
+    };
+
+    socketService.onUnreadCountUpdate = (count) {
+      notifVM.updateUnreadCountFromSocket(count);
+    };
+
+    // ── Real-Time Order Events ──
+    socketService.onNewOrder = (data) {
+      print('[Socket] New order arrived via socket!');
+      orderVM.insertIncomingOrder(data);
+    };
+
+    socketService.onOrderAccepted = (data) {
+      print('[Socket] Order accepted via socket!');
+      orderVM.removeAcceptedOrder(data);
+    };
+
+    socketService.onOrderRejected = (data) {
+      print('[Socket] Order rejected via socket!');
+      orderVM.removeOrderFromPending(data);
+    };
+
+    socketService.onOrderCancelled = (data) {
+      print('[Socket] Order cancelled via socket!');
+      orderVM.removeCancelledOrder(data);
+    };
+
+    socketService.onOrderUpdated = (data) {
+      print('[Socket] Order updated via socket!');
+      orderVM.updateOrderFromSocket(data);
+    };
+
+    socketService.connect();
+  }
+
   Future<void> logout() async {
     state = state.copyWith(status: AuthStatus.loading);
+
+    // Disconnect Socket.IO before logout
+    ref.read(socketServiceProvider).disconnect();
 
     final result = await _logoutUsecase();
 
@@ -124,10 +190,14 @@ class AuthViewModel extends Notifier<AuthState> {
 
     result.fold(
       (failure) => state = state.copyWith(errorMessage: failure.message),
-      (authEntity) => state = state.copyWith(
-        status: AuthStatus.authenticated,
-        authEntity: authEntity,
-      ),
+      (authEntity) {
+        state = state.copyWith(
+          status: AuthStatus.authenticated,
+          authEntity: authEntity,
+        );
+        // Connect Socket.IO on app resume / token recovery
+        _connectSocket();
+      },
     );
   }
 
@@ -217,6 +287,8 @@ class AuthViewModel extends Notifier<AuthState> {
             authEntity: user,
             errorMessage: null,
           );
+          // Connect Socket.IO after Google login
+          _connectSocket();
         },
       );
     } on PlatformException catch (e) {

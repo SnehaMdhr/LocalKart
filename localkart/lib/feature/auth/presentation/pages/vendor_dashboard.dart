@@ -13,6 +13,7 @@ class VendorDashboard extends ConsumerStatefulWidget {
 }
 
 class _VendorDashboardState extends ConsumerState<VendorDashboard> {
+
   @override
   void initState() {
     super.initState();
@@ -32,6 +33,7 @@ class _VendorDashboardState extends ConsumerState<VendorDashboard> {
     final shopEntity = shopState.shopEntity;
     final stats = _calculateStats(assignedOrders, pendingOrders);
     final recentOrders = _getRecentOrders(allOrders);
+
     return Scaffold(
       backgroundColor: AppColors.background,
 
@@ -73,31 +75,31 @@ class _VendorDashboardState extends ConsumerState<VendorDashboard> {
                 children: [
                   DashboardCard(
                     icon: Icons.pending_actions,
-                    iconBg: const Color(0xffE7F8EB),
+                    iconBg: AppColors.dashboardGreen,
                     iconColor: AppColors.primary,
                     title: "Pending",
                     value: "${stats.pending}",
                     badge: stats.pending > 0 ? "URGENT" : null,
-                    badgeColor: const Color(0xffFFE5E5),
-                    badgeText: Colors.red,
+                    badgeColor: AppColors.dashboardRed,
+                    badgeText: AppColors.error,
                   ),
                   DashboardCard(
                     icon: Icons.local_shipping_outlined,
-                    iconBg: const Color(0xffEAF4FF),
+                    iconBg: AppColors.dashboardBlue,
                     iconColor: AppColors.primary,
-                    title: "Out For\nDelivery",
+                    title: "Out For Delivery",
                     value: "${stats.outForDelivery}",
                   ),
                   DashboardCard(
                     icon: Icons.inventory_2_outlined,
-                    iconBg: const Color(0xffEEF7FF),
-                    iconColor: Colors.blue,
+                    iconBg: AppColors.dashboardLightBlue,
+                    iconColor: AppColors.deliveryInfo,
                     title: "Accepted",
                     value: "${stats.accepted}",
                   ),
                   DashboardCard(
                     icon: Icons.shopping_cart_checkout,
-                    iconBg: const Color(0xffEAF7E8),
+                    iconBg: AppColors.dashboardLightGreen,
                     iconColor: AppColors.primary,
                     title: "Delivered",
                     value: "${stats.delivered}",

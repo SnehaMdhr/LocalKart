@@ -7,9 +7,11 @@ import { ShopRepository } from "../repositories/shop.repository";
 
 import { deleteUploadIfExists } from "../middlewares/upload.middleware";
 import { UserRepository } from "../repositories/user.repository";
+import { NotificationService } from "./notification.service";
 
 const shopRepository = new ShopRepository();
 const userRepository = new UserRepository();
+const notificationService = new NotificationService();
 
 export class ShopService {
 
@@ -155,6 +157,21 @@ export class ShopService {
       }
     );
 
+    // ── Send SHOP_APPROVED to vendor ──
+    try {
+      await notificationService.sendNotification({
+        receiverId: shopkeeperId.toString(),
+        receiverRole: "Vendor",
+        title: "Shop Approved",
+        message: `Congratulations! Your shop "${shop.shopName}" has been approved. You can now start receiving orders.`,
+        type: "SHOP_APPROVED",
+        shopId: id,
+        shopName: shop.shopName,
+      });
+    } catch (error) {
+      console.error("Failed to send SHOP_APPROVED notification:", error);
+    }
+
     return updatedShop!;
   }
 
@@ -173,6 +190,23 @@ export class ShopService {
         404,
         "Shop not found"
       );
+    }
+
+    // ── Send SHOP_REJECTED to vendor ──
+    try {
+      const shopkeeperId = (shop.userId as any)._id || shop.userId;
+
+      await notificationService.sendNotification({
+        receiverId: shopkeeperId.toString(),
+        receiverRole: "Vendor",
+        title: "Shop Rejected",
+        message: `Your shop "${shop.shopName}" has been rejected. Please contact support for more details.`,
+        type: "SHOP_REJECTED",
+        shopId: id,
+        shopName: shop.shopName,
+      });
+    } catch (error) {
+      console.error("Failed to send SHOP_REJECTED notification:", error);
     }
 
     return shop;

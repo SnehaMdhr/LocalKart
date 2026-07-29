@@ -77,11 +77,11 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
                 onPressed: () {
                   ref.read(orderViewModelProvider.notifier).getMyOrders();
                 },
-                icon: const Icon(Icons.refresh),
-                label: const Text("Retry"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+              icon: const Icon(Icons.refresh),
+              label: const Text("Retry"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -348,9 +348,9 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
       case "Rejected":
         return AppColors.error;
       case "Preparing":
-        return const Color(0xFFB8860B);
+        return AppColors.preparing;
       case "Out for Delivery":
-        return const Color(0xFF0288D1);
+        return AppColors.deliveryInfo;
       case "Delivered":
         return AppColors.success;
       case "Cancelled":
@@ -365,17 +365,17 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
       case "Pending":
         return AppColors.warning.withValues(alpha: 0.15);
       case "Accepted":
-        return const Color(0xFFE3F5E8);
+        return AppColors.categoryVegetable;
       case "Rejected":
-        return const Color(0xFFFFEEEE);
+        return AppColors.logoutBackground;
       case "Preparing":
-        return const Color(0xFFFFF4D6);
+        return AppColors.categoryDairy;
       case "Out for Delivery":
-        return const Color(0xFFE1F5FE);
+        return AppColors.deliveryInfoBg;
       case "Delivered":
         return AppColors.success.withValues(alpha: 0.15);
       case "Cancelled":
-        return const Color(0xFFF3E5F5);
+        return AppColors.categoryPersonal;
       default:
         return AppColors.inputFill;
     }
@@ -389,12 +389,12 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
       case "Preparing":
         return AppColors.primaryExtraLight;
       case "Out for Delivery":
-        return const Color(0xFFE1F5FE);
+        return AppColors.deliveryInfoBg;
       case "Delivered":
         return AppColors.success.withValues(alpha: 0.15);
       case "Cancelled":
       case "Rejected":
-        return const Color(0xFFFFEEEE);
+        return AppColors.logoutBackground;
       default:
         return AppColors.inputFill;
     }

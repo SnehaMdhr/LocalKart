@@ -19,8 +19,8 @@ class AppBackground extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFFF9FCF8),
-            Color(0xFFF3F9F1),
+            AppColors.backgroundGradientStart,
+            AppColors.backgroundGradientMiddle,
           ],
         ),
       ),

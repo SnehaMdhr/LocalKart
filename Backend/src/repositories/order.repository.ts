@@ -112,11 +112,9 @@ export class OrderRepository implements IOrderRepository {
     updateData: Partial<IOrder>
   ): Promise<IOrder | null> {
     return OrderModel.findByIdAndUpdate(id, updateData, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     })
-      .populate("customerId")
-      .populate("shopId")
       .populate("items.productId");
   }
 
@@ -142,11 +140,9 @@ export class OrderRepository implements IOrderRepository {
         estimatedDeliveryTime,
       },
       {
-        new: true,
+        returnDocument: 'after',
       }
     )
-      .populate("customerId")
-      .populate("shopId")
       .populate("items.productId");
   }
 
@@ -162,11 +158,9 @@ export class OrderRepository implements IOrderRepository {
         },
       },
       {
-        new: true,
+        returnDocument: 'after',
       }
     )
-      .populate("customerId")
-      .populate("shopId")
       .populate("items.productId");
   }
 }

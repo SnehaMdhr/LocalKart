@@ -11,6 +11,8 @@ class AppColors {
   // Background Colors
   static const Color background = Color(0xFFF7FBF5);
   static const Color backgroundGradientEnd = Color(0xFFEAF7E8);
+  static const Color backgroundGradientStart = Color(0xFFF9FCF8);
+  static const Color backgroundGradientMiddle = Color(0xFFF3F9F1);
 
   // Text Colors
   static const Color textPrimary = Color(0xFF1F2937);
@@ -24,9 +26,21 @@ class AppColors {
   static const Color border = Color(0xFFD9E2EC);
 
   // Status Colors
-  static const Color success = Color(0xFF22C55E);
+  static const Color success = Color(0xFF1EB154);
   static const Color error = Color(0xFFEF4444);
   static const Color warning = Color(0xFFF59E0B);
+  static const Color preparing = Color(0xFFB8860B);
+  static const Color deliveryInfo = Color(0xFF0288D1);
+  static const Color deliveryInfoBg = Color(0xFFE1F5FE);
+  static const Color warningLight = Color(0xFFFFF4E5);
+  static const Color successLight = Color(0xFF66BB6A);
+
+  // Dashboard Colors
+  static const Color dashboardGreen = Color(0xFFE7F8EB);
+  static const Color dashboardRed = Color(0xFFFFE5E5);
+  static const Color dashboardBlue = Color(0xFFEAF4FF);
+  static const Color dashboardLightBlue = Color(0xFFEEF7FF);
+  static const Color dashboardLightGreen = Color(0xFFEAF7E8);
 
   // Others
   static const Color white = Colors.white;
